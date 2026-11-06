@@ -1,7 +1,7 @@
 // Pano: üst şerit, Bugün/Hafta, zincirler, sayaç kısa yolları, bölüm butonları, düzen modu (PanoEkrani.kt).
 import { html, useState } from '../../vendor/preact-htm.js';
 import { M, Ayar, useVeri, useBugun, git, koyuMu } from './durum.js';
-import { Ikon, Kart, Cip, Segment, YuvarlakButon, TikButon, MetinButon, Dialog, Girdi, SesleYaz, MiniRozet, uzunBas, vurgu, saydam, RENK } from './ortak.js';
+import { Ikon, Kart, Cip, Segment, YuvarlakButon, TikButon, MetinButon, Dialog, Girdi, SesleYaz, MiniRozet, Anahtar, uzunBas, vurgu, saydam, RENK } from './ortak.js';
 import { AjandaMantik, GunlukMantik, PanoMantik, PanoDuzen, SayacMantik, StokMantik, tutarMetni } from '../mantik.js';
 import { ayBasi, isoHafta, gunUzun, gunBaslik, saatMetni, saatYazi, gunAyHg } from '../tarih.js';
 import { ModSecici, KayitDialog, kaynakIkonu, kaynakRengi } from './gunluk.js';
@@ -17,130 +17,68 @@ export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve paketi' };
 const kisaAd = (ad) => KISA[ad] ?? ad;
 
+/**
+ * Pano kategorileri. Sayaç kategorilerinde öğe kimliği hazır sayacın anahtarıdır (diğer sayaçlarda 'is:<id>'),
+ * buton kategorilerinde butonun anahtarı. varsayilan: favori seçilmemişken gösterilenler (null = hepsi).
+ */
+export const PANO_KATEGORI = [
+  { k: 'mutfak', ad: 'Mutfak ve çamaşır', sayac: ['bulasik_calis', 'bulasik_bosalt', 'camasir', 'kurutucu', 'asma'], varsayilan: ['bulasik_calis', 'camasir', 'kurutucu', 'asma'] },
+  { k: 'temizlik', ad: 'Temizlik', sayac: ['cop', 'dyson', 'roborock'], varsayilan: null },
+  { k: 'diger', ad: 'Diğer sayaçlar', sayac: 'diger', varsayilan: null },
+  { k: 'alim', ad: 'Alışveriş ve para', buton: ['alisveris', 'para', 'stok', 'takviye'], varsayilan: null },
+  { k: 'kayit', ad: 'Not ve kayıt', buton: ['ses', 'elle', 'etkinlik'], varsayilan: null },
+  { k: 'bolum', ad: 'Bölümler', buton: ['ev', 'sayacb', 'ozet'], varsayilan: null },
+];
+const HAZIR_ANAHTAR = new Set(PANO_KATEGORI.flatMap((k) => (Array.isArray(k.sayac) ? k.sayac : [])));
+
+function favoriler() { try { return JSON.parse(M.db.ayarAl('pano_favori', '{}')) ?? {}; } catch { return {}; } }
+function favoriYaz(kat, liste) { M.db.ayarYaz('pano_favori', JSON.stringify({ ...favoriler(), [kat]: liste })); }
+
 export function PanoEkrani() {
   const depo = useVeri();
   const bugun = useBugun();
-  const [hafta, setHafta] = useState(0);
-  const [zincirKur, setZincirKur] = useState(false);
   const [elleKayit, setElleKayit] = useState(false);
-  const [duzenMod, setDuzenMod] = useState(false);
   const [etkinlikYakala, setEtkinlikYakala] = useState(false);
-  const [gunAcik, setGunAcik] = useState(true);
-  const [katFiltre, setKatFiltre] = useState(null);
   const [kartAcik, setKartAcik] = useState(false);
+  const [favoriKat, setFavoriKat] = useState(null);
   const [yap0, tutarPenceresi] = useYap();
   const [sayacGiris, sayacPenceresi] = useSayacGirisi();
   const kayit = useKayitta();
 
   const isler = depo.isDurumlari(bugun);
-  const zincirler = M.db.hepsi('zincirler').filter((z) => !z.arsiv).sort((a, b) => a.id - b.id);
   const islenmemis = M.db.hepsi('notlar').filter((n) => !n.islendi).length;
   const mod = M.db.getir('modlar', bugun)?.seviye ?? null;
   const kategoriler = M.db.hepsi('kategoriler').sort((a, b) => a.sira - b.sira || a.id - b.id);
-  const duzen = PanoDuzen.bloklar(Ayar.panoDuzeni);
-  const duzenTasi = (i, yon) => { Ayar.panoDuzeni = PanoDuzen.tasi(duzen, i, yon).join(','); };
-
-  const hs = GunlukMantik.hafta(bugun, 0);
-  const aralik = hafta === 0 ? [bugun, bugun] : [hs.bas, hs.son];
-  const yapilanlar = depo.aralik(aralik[0], aralik[1]);
-  const ajanda = depo.ajanda();
-  const tamam = depo.tamamSet();
-  const son = hafta === 0 ? bugun : hs.son;
-  const ajandaIs = [];
-  const goruldu = new Set();
-  for (let g = bugun; g <= son; g++) for (const gr of AjandaMantik.gunListesi(ajanda, tamam, g, bugun)) {
-    if (gr.yapildi || goruldu.has(gr.a.id)) continue;
-    goruldu.add(gr.a.id); ajandaIs.push([g, gr]);
-  }
-  // Hızlı kısa yollar: sabit yedili (bulaşık, çamaşır, kurutma, asma, çöp, Dyson, Roborock), sonra son 30 günde en çok kullanılan sayaçlar; en fazla 12.
-  const sabit = SayacMantik.PANO.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean);
-  const kullanim = new Map();
-  for (const k of depo.aralik(bugun - 30, bugun)) if (k.kaynak === 'SAYAC') kullanim.set(k.refId, (kullanim.get(k.refId) ?? 0) + 1);
-  const digerleri = isler.filter((d) => d.tur === 'SAYAC' && !sabit.includes(d) && (d.yildizli || kullanim.get(d.id)))
-    .sort((a, b) => (kullanim.get(b.id) ?? 0) - (kullanim.get(a.id) ?? 0) || a.id - b.id);
-  const sayaclar = [...sabit, ...digerleri].slice(0, 12);
   const evYakin = PanoMantik.evIsleriYakin(isler, bugun);
-  const isaretMap = new Map();
-  for (const x of M.db.hepsi('isaretler')) { if (!isaretMap.has(x.zincirId)) isaretMap.set(x.zincirId, new Map()); isaretMap.get(x.zincirId).set(x.gun, x.adet); }
   const yap = (d) => { if (d.anahtar != null) sayacGiris(d.anahtar); else yap0(d); };
   const koyu = koyuMu();
 
-  const bloklar = {
-    gun: () => {
-      const filtreli = ajandaIs.filter(([, gr]) => katFiltre == null || gr.a.kategoriId === katFiltre);
-      const tarihli = filtreli.filter(([, gr]) => gr.a.tarih != null).sort((x, y) => x[0] - y[0] || (x[1].a.saatDakika ?? 1e9) - (y[1].a.saatDakika ?? 1e9));
-      const tarihsiz = filtreli.filter(([, gr]) => gr.a.tarih == null);
-      const katIdler = [...new Set(ajandaIs.map(([, gr]) => gr.a.kategoriId).filter((x) => x != null))];
-      const katlar = katIdler.map((id) => kategoriler.find((k) => k.id === id)).filter(Boolean);
-      return html`<${Kart} dikey=${8}>
-        <div class="satir">
-          <${Segment} secenekler=${['Bugün', 'Hafta']} secili=${hafta} onSec=${setHafta} />
-          <span class="dolu"></span>
-          <button class="lk soluk" style="padding:8px 0" onClick=${() => setGunAcik(!gunAcik)}>${ajandaIs.length} yapılacak · ${yapilanlar.length} yapıldı</button>
-          <button class="ikonbtn" style="width:36px;height:36px" aria-label=${gunAcik ? 'Listeyi kapat' : 'Listeyi aç'} onClick=${() => setGunAcik(!gunAcik)}>
-            <${Ikon} ad=${gunAcik ? 'kapat' : 'detay'} boy=${15} renk="var(--soluk)" /></button>
-        </div>
-        <button class="satir" style="width:100%;height:36px;border-radius:10px;text-align:left" onClick=${() => git('takip')}>
-          <${Ikon} ad="ev" boy=${15} renk=${RENK.adacayi} />
-          <span class=${'bk dolu ' + (evYakin.length ? 'yazi' : 'soluk')} style="margin-left:9px">${evYakin.length === 0 ? 'Ev işleri: 2 gün içinde iş yok' : `Ev işleri: 2 gün içinde ${evYakin.length} iş`}</span>
-          <${Ikon} ad="ileri" boy=${13} renk="var(--soluk)" />
-        </button>
-        ${gunAcik && html`
-          ${katlar.length > 1 && html`<div class="sar" style="padding:4px 0">
-            <${Cip} metin="Hepsi" secili=${katFiltre == null} onClick=${() => setKatFiltre(null)} />
-            ${katlar.map((k) => html`<${Cip} metin=${k.ad} secili=${katFiltre === k.id} renk=${vurgu(k.renk)} onClick=${() => setKatFiltre(katFiltre === k.id ? null : k.id)} />`)}
-          </div>`}
-          <div style="height:4px"></div>
-          ${tarihli.map(([g, gr]) => html`<${PanoAjandaSatiri} key=${'t' + gr.a.id} g=${g} gr=${gr} bugun=${bugun} kategoriler=${kategoriler} />`)}
-          ${tarihsiz.length > 0 && html`<div class="lk soluk" style="padding-top:6px">Tarihsiz</div>
-            ${tarihsiz.map(([g, gr]) => html`<${PanoAjandaSatiri} key=${'s' + gr.a.id} g=${g} gr=${gr} bugun=${bugun} kategoriler=${kategoriler} />`)}`}
-          ${filtreli.length === 0 && html`<div class="bm soluk" style="padding:8px 0">${hafta === 0 ? 'Bugün için yapılacak yok.' : 'Bu hafta yapılacak yok.'}</div>`}
-          ${yapilanlar.length > 0 && html`<div style="height:4px"></div><div class="lk soluk">Yapılanlar</div>
-            ${yapilanlar.slice(0, 8).map((k) => html`<div key=${k.id} class="satir" style="height:24px">
-              <${Ikon} ad=${kaynakIkonu(k.kaynak)} boy=${13} renk=${kaynakRengi(k.kaynak)} />
-              <span class="bk soluk dolu tek" style="margin-left:8px">${k.metin}</span>
-              <span class="bk soluk">${saatMetni(k.zaman)}</span></div>`)}
-            ${yapilanlar.length > 8 && html`<div class="bk soluk">+${yapilanlar.length - 8} daha (Günlük'te)</div>`}`}
-        `}
-      </${Kart}>`;
-    },
-    zincir: () => html`<${Kart} dikey=${6}>
-      <div class="satir" style="height:30px">
-        <span class="lk soluk dolu">Zincirler</span>
-        <button class="daire" aria-label="Zincir kur" style=${{ width: '28px', height: '28px', background: RENK.adacayi, color: 'var(--murekkep)' }} onClick=${() => setZincirKur(true)}><${Ikon} ad="arti" boy=${15} /></button>
-      </div>
-      ${zincirler.length === 0 && html`<div class="bk soluk" style="padding-bottom:6px">Bir alışkanlık için zincir kur: örn. 10 gün 7'den önce kalk.</div>`}
-      ${zincirler.map((z) => html`<${ZincirSatiri} key=${z.id} z=${z} isaretler=${isaretMap.get(z.id) ?? new Map()} bugun=${bugun}
-        onDokun=${(g) => depo.zincirDokun(z.id, g)} onAc=${() => git('zincir/' + z.id)} />`)}
-    </${Kart}>`,
-    sayac: () => (sayaclar.length || duzenMod) && html`<div>
-      <div class="lk soluk" style="padding:0 2px 6px">Hızlı kayıt · dokun, sayaca yazılsın</div>
-      <div class="izgara4">${sayaclar.map((d) => html`<button key=${d.id} class="hizli" aria-label=${d.ad + ' +1'} ...${uzunBas(() => git('is/' + d.id), () => yap(d))}>
-        <div class="daire" style=${{ width: '44px', height: '44px', background: saydam(vurgu(d.renk), 22) }}><${Ikon} ad=${d.ikon} boy=${24} renk=${vurgu(d.renk)} /></div>
-        <span class="lk iki" style="margin-top:4px">${kisaAd(d.ad)}</span>
-        ${d.bugunSayi > 0 && html`<${MiniRozet} metin=${String(d.bugunSayi)} stil=${{ top: '4px', right: '4px' }} />`}
-      </button>`)}</div>
-    </div>`,
-    buton: () => {
-      const ham = [
-        { anahtar: 'ev', ad: 'Ev işleri', ikon: 'ev', renk: RENK.adacayi, bilgi: evYakin.length === 0 ? '2 günde yok' : `2 günde ${evYakin.length}`, onClick: () => git('takip') },
-        { anahtar: 'sayacb', ad: 'Sayaç', ikon: 'sayac', renk: RENK.sari, bilgi: (() => { const n = PanoMantik.bakimVakti(isler, bugun).length; return n > 0 ? `${n} bakım vakti` : 'yapılanlar'; })(), onClick: () => git('sayac') },
-        ...alimButonlari(depo, bugun, () => setKartAcik(true)),
-        { anahtar: 'ozet', ad: 'Özet', ikon: 'detay', renk: RENK.adacayi, bilgi: `Hafta ${isoHafta(bugun)}`, onClick: () => git('ozet') },
-        { anahtar: 'etkinlik', ad: 'Etkinlik', ikon: 'afis', renk: RENK.lavanta, bilgi: 'hızlı yakala', onClick: () => setEtkinlikYakala(true) },
-        { anahtar: 'elle', ad: 'Elle kayıt', ikon: 'kalem', renk: RENK.lavanta, bilgi: "Günlük'e yaz", onClick: () => setElleKayit(true) },
-        { anahtar: 'ses', ad: kayit.kayitta ? 'Durdur' : 'Sesli not', ikon: kayit.kayitta ? 'durdur' : 'mikrofon', renk: RENK.mercan, bilgi: kayit.kayitta ? 'kayıt sürüyor' : 'bas, konuş', onClick: sesToggle },
-      ];
-      const sira = PanoDuzen.butonlar(Ayar.butonDuzeni);
-      const yer = (b) => { const i = sira.indexOf(b.anahtar); return i < 0 ? 99 : i; };
-      const butonlar = ham.sort((a, b) => yer(a) - yer(b));
-      return html`<div>
-        ${duzenMod && html`<div class="bk c-sari" style="margin-bottom:6px">Bir butona dokun: bir öne alınır.</div>`}
-        <div class="izgara4">${butonlar.map((b, i) => html`<${BolumKutusu} key=${b.anahtar} b=${duzenMod
-          ? { ...b, onClick: () => { Ayar.butonDuzeni = PanoDuzen.tasi(butonlar.map((x) => x.anahtar), i, -1).join(','); } } : b} />`)}</div>
-      </div>`;
-    },
+  // Sayaç öğeleri
+  const sayacOgesi = (d) => ({ id: d.anahtar ?? 'is:' + d.id, ad: kisaAd(d.ad), tamAd: d.ad, ikon: d.ikon, renk: vurgu(d.renk), zemin: saydam(vurgu(d.renk), 22),
+    rozet: d.bugunSayi > 0 ? String(d.bugunSayi) : null, onClick: () => yap(d), onUzun: () => git('is/' + d.id) });
+  const kullanim = new Map();
+  for (const k of depo.aralik(bugun - 30, bugun)) if (k.kaynak === 'SAYAC') kullanim.set(k.refId, (kullanim.get(k.refId) ?? 0) + 1);
+  const digerSayaclar = isler.filter((d) => d.tur === 'SAYAC' && !HAZIR_ANAHTAR.has(d.anahtar))
+    .sort((a, b) => (kullanim.get(b.id) ?? 0) - (kullanim.get(a.id) ?? 0) || a.id - b.id);
+
+  // Buton öğeleri
+  const butonlar = [
+    { anahtar: 'ev', ad: 'Ev işleri', ikon: 'ev', renk: RENK.adacayi, bilgi: evYakin.length === 0 ? '2 günde yok' : `2 günde ${evYakin.length}`, onClick: () => git('takip') },
+    { anahtar: 'sayacb', ad: 'Sayaç', ikon: 'sayac', renk: RENK.sari, bilgi: (() => { const n = PanoMantik.bakimVakti(isler, bugun).length; return n > 0 ? `${n} bakım` : 'yapılanlar'; })(), onClick: () => git('sayac') },
+    ...alimButonlari(depo, bugun, () => setKartAcik(true)),
+    { anahtar: 'ozet', ad: 'Özet', ikon: 'detay', renk: RENK.adacayi, bilgi: `Hafta ${isoHafta(bugun)}`, onClick: () => git('ozet') },
+    { anahtar: 'etkinlik', ad: 'Etkinlik', ikon: 'afis', renk: RENK.lavanta, bilgi: 'yakala', onClick: () => setEtkinlikYakala(true) },
+    { anahtar: 'elle', ad: 'Elle kayıt', ikon: 'kalem', renk: RENK.lavanta, bilgi: 'Günlük', onClick: () => setElleKayit(true) },
+    { anahtar: 'ses', ad: kayit.kayitta ? 'Durdur' : 'Sesli not', ikon: kayit.kayitta ? 'durdur' : 'mikrofon', renk: RENK.mercan, bilgi: kayit.kayitta ? 'kayıtta' : 'bas, konuş', onClick: sesToggle },
+  ].map((b) => ({ ...b, id: b.anahtar, tamAd: b.ad, zemin: saydam(b.renk, 18) }));
+
+  const tumOgeler = (kat) => {
+    if (kat.sayac === 'diger') return digerSayaclar.map(sayacOgesi);
+    if (kat.sayac) return kat.sayac.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean).map(sayacOgesi);
+    return kat.buton.map((a) => butonlar.find((b) => b.anahtar === a)).filter(Boolean);
   };
+  const fav = favoriler();
+  const seciliIdler = (kat, ogeler) => fav[kat.k] ?? kat.varsayilan ?? ogeler.map((o) => o.id);
 
   return html`<div class="icerik"><div class="sutun">
     <div class="satir">
@@ -161,23 +99,62 @@ export function PanoEkrani() {
       <span style="width:6px"></span>
       <${YuvarlakButon} ikon="ayar" aciklama="Ayarlar" onClick=${() => git('ayarlar')} />
     </div>
-    ${duzen.map((blok, sira) => {
-      const ic = bloklar[blok]?.();
-      if (!ic) return null;
-      return html`<${BlokCercevesi} key=${blok} anahtar=${blok} sira=${sira} toplam=${duzen.length} duzenMod=${duzenMod} onTasi=${(y) => duzenTasi(sira, y)} onUzun=${() => setDuzenMod(true)}>${ic}</${BlokCercevesi}>`;
+    ${PANO_KATEGORI.map((kat) => {
+      const ogeler = tumOgeler(kat);
+      if (!ogeler.length) return null;
+      const secili = seciliIdler(kat, ogeler);
+      const gorunen = secili.map((id) => ogeler.find((o) => o.id === id)).filter(Boolean);
+      return html`<section key=${kat.k} class="pano-kat" aria-label=${kat.ad}>
+        <div class="satir pano-kat-bas">
+          <span class="lk soluk dolu">${kat.ad}</span>
+          <button class="ucnokta" aria-label=${kat.ad + ': favorileri seç'} onClick=${() => setFavoriKat(kat.k)}>⋯</button>
+        </div>
+        ${gorunen.length === 0
+          ? html`<button class="bk soluk" style="padding:4px 2px 2px;text-align:left" onClick=${() => setFavoriKat(kat.k)}>Favori yok. ⋯ ile seç.</button>`
+          : html`<div class="izgara5">${gorunen.map((o) => html`<${KucukKutu} key=${o.id} o=${o} />`)}</div>`}
+      </section>`;
     })}
-    <div class="satir" style="justify-content:center">
-      <${MetinButon} renk="var(--soluk)" stil=${{ fontSize: '11px', fontWeight: 600 }} onClick=${() => setDuzenMod(!duzenMod)}>${duzenMod ? 'Düzen bitti' : 'Panonun düzenini değiştir'}</${MetinButon}>
-    </div>
   </div>
   ${tutarPenceresi}${sayacPenceresi}
-  ${zincirKur && html`<${ZincirKurDialog} bugun=${bugun} onKapat=${() => setZincirKur(false)} />`}
+  ${favoriKat && (() => {
+    const kat = PANO_KATEGORI.find((k) => k.k === favoriKat);
+    const ogeler = tumOgeler(kat);
+    return html`<${FavoriDialog} kat=${kat} ogeler=${ogeler} secili=${seciliIdler(kat, ogeler)} onKapat=${() => setFavoriKat(null)} />`;
+  })()}
   ${etkinlikYakala && html`<${EtkinlikYakalaDialog} onKapat=${() => setEtkinlikYakala(false)}
     onKaydet=${(m) => { Is.notKaydet({ metin: m, olusturma: depo.simdi(), islendi: false }); setEtkinlikYakala(false); }} />`}
   ${kartAcik && html`<${KartDialog} bugun=${bugun} onKapat=${() => setKartAcik(false)} onTumu=${() => { setKartAcik(false); git('kart'); }} />`}
   ${elleKayit && html`<${KayitDialog} ilkGun=${bugun} bugun=${bugun} kategoriler=${kategoriler} onKapat=${() => setElleKayit(false)}
     onKaydet=${(m, g, k) => { Is.elleKayit(m, g, k); setElleKayit(false); }} />`}
   </div>`;
+}
+
+/** Panodaki küçük kare kutu: simge, kısa ad, (varsa) kısa bilgi ve bugünkü sayı rozeti. Uzun basınca ayrıntı. */
+function KucukKutu({ o }) {
+  const olay = o.onUzun ? uzunBas(o.onUzun, o.onClick) : { onClick: o.onClick };
+  return html`<button class="kkutu" aria-label=${o.onUzun ? o.tamAd + ' +1' : o.tamAd} ...${olay}>
+    <div class="daire" style=${{ width: '30px', height: '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${17} renk=${o.renk} /></div>
+    <span class="kkutu-ad">${o.ad}</span>
+    ${o.bilgi && html`<span class="kkutu-bilgi">${o.bilgi}</span>`}
+    ${o.rozet && html`<${MiniRozet} metin=${o.rozet} stil=${{ top: '2px', right: '2px' }} />`}
+  </button>`;
+}
+
+/** Kategorinin ⋯ menüsü: hangi öğelerin panoda görüneceğini (favoriler) seçer. Sıra: seçiliş sırası. */
+function FavoriDialog({ kat, ogeler, secili, onKapat }) {
+  const [liste, setListe] = useState(secili.filter((id) => ogeler.some((o) => o.id === id)));
+  const degis = (id, acik) => setListe(acik ? [...liste, id] : liste.filter((x) => x !== id));
+  return html`<${Dialog} baslik=${'Favoriler · ' + kat.ad} onKapat=${onKapat} butonlar=${[
+    { metin: 'Vazgeç', onClick: onKapat },
+    { metin: 'Kaydet', onClick: () => { favoriYaz(kat.k, liste); onKapat(); } },
+  ]}>
+    <span class="bk soluk">Açık olanlar panoda görünür.</span>
+    ${ogeler.map((o) => html`<div key=${o.id} class="satir" style="min-height:44px">
+      <div class="daire" style=${{ width: '28px', height: '28px', background: o.zemin, flex: 'none' }}><${Ikon} ad=${o.ikon} boy=${16} renk=${o.renk} /></div>
+      <span class="bm dolu" style="margin-left:10px">${o.tamAd}</span>
+      <${Anahtar} acik=${liste.includes(o.id)} etiket=${o.tamAd} onDegis=${(a) => degis(o.id, a)} />
+    </div>`)}
+  </${Dialog}>`;
 }
 
 function PanoAjandaSatiri({ g, gr, bugun, kategoriler }) {
