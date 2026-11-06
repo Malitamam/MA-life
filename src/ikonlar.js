@@ -129,4 +129,21 @@ export function urunIkonu(ad) {
 const URUN_EMOJI = { ekmek: '🍞', brokoli: '🥦', domates: '🍅', salatalik: '🥒', maydanoz: '🌿', sogan: '🧅', patates: '🥔', sut: '🥛',
   peynir: '🧀', kahve: '☕', makarna: '🍝', tereyag: '🧈', icecek: '🥤', su: '💧', et: '🥩', tavuk: '🍗', balik: '🐟', yogurt: '🥣',
   yag: '🫒', yemis: '🥜', musli: '🌾', pommes: '🍟', buz: '🧊', paket: '🛒' };
-export const urunEmoji = (ad) => URUN_EMOJI[urunIkonu(ad)] ?? '🛒';
+
+/** Sık alınanlar kataloğu (Alışveriş > Hızlı seç > Listeden seç). */
+export const URUN_KATALOG = [
+  { grup: 'Fırın ve kahvaltı', urunler: [['Ekmek', '🍞'], ['Brötchen', '🥖'], ['Yumurta', '🥚'], ['Zeytin', '🫒'], ['Bal', '🍯'], ['Reçel', '🍓'], ['Müsli', '🌾'], ['Tereyağı', '🧈'], ['Peynir', '🧀'], ['Kaşar', '🧀'], ['Sucuk', '🌭']] },
+  { grup: 'Sebze', urunler: [['Brokoli', '🥦'], ['Domates', '🍅'], ['Salatalık', '🥒'], ['Maydanoz', '🌿'], ['Soğan', '🧅'], ['Patates', '🥔'], ['Biber', '🫑'], ['Havuç', '🥕'], ['Sarımsak', '🧄'], ['Marul', '🥬'], ['Mantar', '🍄'], ['Patlıcan', '🍆'], ['Mısır', '🌽'], ['Limon', '🍋'], ['Avokado', '🥑']] },
+  { grup: 'Meyve', urunler: [['Elma', '🍎'], ['Muz', '🍌'], ['Portakal', '🍊'], ['Mandalina', '🍊'], ['Üzüm', '🍇'], ['Çilek', '🍓'], ['Armut', '🍐'], ['Karpuz', '🍉'], ['Kivi', '🥝']] },
+  { grup: 'Süt ürünleri', urunler: [['Süt', '🥛'], ['Yoğurt', '🥣'], ['Ayran', '🥛'], ['Krema', '🍶'], ['Lor', '🧀']] },
+  { grup: 'Et ve balık', urunler: [['Kırmızı et', '🥩'], ['Kıyma', '🥩'], ['Tavuk', '🍗'], ['Balık', '🐟'], ['Hindi', '🦃'], ['Sosis', '🌭']] },
+  { grup: 'Kuru gıda', urunler: [['Makarna', '🍝'], ['Pirinç', '🍚'], ['Bulgur', '🌾'], ['Un', '🌾'], ['Şeker', '🍬'], ['Tuz', '🧂'], ['Mercimek', '🫘'], ['Nohut', '🫘'], ['Salça', '🥫'], ['Konserve', '🥫'], ['Yağ', '🫒'], ['Kuru yemiş', '🥜'], ['Kahve', '☕'], ['Çay', '🍵'], ['Baharat', '🌶️']] },
+  { grup: 'İçecek', urunler: [['İçecek', '🥤'], ['Su', '💧'], ['Maden suyu', '🫧'], ['Meyve suyu', '🧃'], ['Kola', '🥤'], ['Bira', '🍺'], ['Şarap', '🍷']] },
+  { grup: 'Atıştırmalık ve dondurulmuş', urunler: [['Pommes', '🍟'], ['Buz', '🧊'], ['Pizza', '🍕'], ['Dondurma', '🍦'], ['Çikolata', '🍫'], ['Bisküvi', '🍪'], ['Cips', '🥔'], ['Kek', '🍰']] },
+  { grup: 'Ev ve temizlik', urunler: [['Tuvalet kâğıdı', '🧻'], ['Havlu peçete', '🧻'], ['Çöp poşeti', '🗑️'], ['Bulaşık tableti', '🫧'], ['Bulaşık deterjanı', '🧴'], ['Çamaşır deterjanı', '🧺'], ['Yumuşatıcı', '🧴'], ['Sünger', '🧽'], ['Pil', '🔋'], ['Ampul', '💡']] },
+  { grup: 'Kişisel bakım', urunler: [['Diş macunu', '🪥'], ['Diş fırçası', '🪥'], ['Şampuan', '🧴'], ['Sabun', '🧼'], ['Duş jeli', '🧴'], ['Deodorant', '🧴'], ['Tıraş bıçağı', '🪒'], ['Krem', '🧴']] },
+  { grup: 'Çocuk', urunler: [['Bebek bezi', '👶'], ['Islak mendil', '🧻'], ['Bebek maması', '🍼'], ['Meyve püresi', '🍎']] },
+];
+const KATALOG_EMOJI = new Map(URUN_KATALOG.flatMap((g) => g.urunler).map(([ad, e]) => [ad.toLocaleLowerCase('tr-TR'), e]));
+/** Renkli simge: önce katalogdaki tam ad, sonra ad içindeki kelime; bilinmeyen → alışveriş arabası. */
+export const urunEmoji = (ad) => KATALOG_EMOJI.get(String(ad ?? '').trim().toLocaleLowerCase('tr-TR')) ?? URUN_EMOJI[urunIkonu(ad)] ?? '🛒';

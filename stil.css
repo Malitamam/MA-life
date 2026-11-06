@@ -153,3 +153,4 @@ textarea.girdi { resize: vertical; min-height: 120px; }
 .kkutu-emoji { font-size: 24px; line-height: 1; height: 28px; display: flex; align-items: center; font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 .kkutu.dar .kkutu-emoji { font-size: 22px; height: 26px; }
 .liste-emoji { font-size: 17px; width: 18px; text-align: center; line-height: 1; flex: none; font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
+.liste-cip { background: var(--yuzey); border-radius: 12px; padding: 7px 11px; font-size: 12px; font-weight: 700; color: var(--yazi); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

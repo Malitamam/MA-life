@@ -6,7 +6,7 @@ import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi,
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
 import { KART_TUTARLARI, KucukKutu } from './pano.js';
-import { urunIkonu, urunEmoji } from '../ikonlar.js';
+import { urunIkonu, urunEmoji, URUN_KATALOG } from '../ikonlar.js';
 import { Is } from './islem.js';
 
 const esitTr = (a, b) => a.trim().toLocaleLowerCase('tr-TR') === b.trim().toLocaleLowerCase('tr-TR');
@@ -28,6 +28,7 @@ export function AlisverisEkrani() {
   const [online, setOnline] = useState(0);
   const [hizliEkle, setHizliEkle] = useState(false);
   const [hizliDuzen, setHizliDuzen] = useState(false);
+  const [katalog, setKatalog] = useState(false);
   const acik = M.db.hepsi('alisveris').sort((a, b) => a.eklenme - b.eklenme);
   const bekleyen = acik.filter((m) => !m.alindi);
   const urunler = depo.urunler();
@@ -53,7 +54,9 @@ export function AlisverisEkrani() {
       <${IkonButon} ikon="arti" aciklama="Ekle" boy=${20} onClick=${() => { if (yeni.trim()) { ekle(yeni); setYeni(''); } }} />
     </div></${Kart}>
     <div>
-      <div class="satir"><span class="lk soluk dolu">Hızlı seç</span><${MetinButon} onClick=${() => setHizliDuzen(!hizliDuzen)}>${hizliDuzen ? 'Bitti' : 'Düzenle'}</${MetinButon}></div>
+      <div class="satir"><span class="lk soluk dolu">Hızlı seç</span>
+        <${MetinButon} onClick=${() => setKatalog(true)}>Listeden seç</${MetinButon}>
+        <${MetinButon} onClick=${() => setHizliDuzen(!hizliDuzen)}>${hizliDuzen ? 'Bitti' : 'Düzenle'}</${MetinButon}></div>
       ${hizliDuzen && html`<div class="bk c-sari" style="margin-bottom:6px">Çıkarmak için dokun.</div>`}
       <div class="izgara6">
         ${hizli.map((ad) => {
@@ -76,7 +79,7 @@ export function AlisverisEkrani() {
       ${liste.map((m) => {
         const eski = !m.alindi && simdi - m.eklenme > 7 * 86_400_000;
         return html`<div key=${m.id} class="satir" style="height:42px" ...${uzunBas(() => M.db.sil('alisveris', m.id), null)}>
-          ${urunIkonu(m.ad) !== 'paket' ? html`<span class="liste-emoji" aria-hidden="true">${urunEmoji(m.ad)}</span>`
+          ${urunEmoji(m.ad) !== '🛒' ? html`<span class="liste-emoji" aria-hidden="true">${urunEmoji(m.ad)}</span>`
             : html`<${Ikon} ad=${m.ikon && m.ikon !== 'paket' ? m.ikon : 'paket'} boy=${16} renk=${RENK.mercan} />`}
           <span class=${'bm dolu tek' + (m.alindi ? ' soluk cizik' : '')} style="margin-left:9px">${m.ad}</span>
           ${eski && html`<span class="tm c-mercan" style="padding:0 6px">!</span>`}
@@ -89,6 +92,7 @@ export function AlisverisEkrani() {
       })}
       ${liste.length > 0 && html`<div class="bk soluk" style="padding:4px 0">Uzun bas: listeden sil · ! = 7 günden uzun süredir listede · stoklu ürün alınınca kaç tane aldığın sorulur</div>`}
     </${Kart}>
+    ${katalog && html`<${KatalogDialog} secili=${hizli} onKapat=${() => setKatalog(false)} onKaydet=${(l) => { Ayar.hizliSecimler = l; setKatalog(false); }} />`}
     ${hizliEkle && html`<${TekAlanDialog} baslik="Hızlı seçime ekle" ipucu="örn. Avokado" tamam="Ekle" onKapat=${() => setHizliEkle(false)}
       onTamam=${(ad) => { if (ad.trim()) Ayar.hizliSecimler = [...hizli, buyukIlk(ad.trim())]; setHizliEkle(false); }} />`}
     ${alimIcin && html`<${AlimDialog} u=${alimIcin[1]} bugun=${bugun} kapatMetni="Sadece işaretle"
@@ -395,4 +399,25 @@ export function UrunDetay({ id }) {
   ${duzenle && html`<${UrunDialog} u=${u} onKapat=${() => setDuzenle(false)} onKaydet=${(x) => { Is.urunKaydet(x); setDuzenle(false); }} />`}
   ${say && html`<${StokSayDialog} u=${u} baslik=${`Elde kaç ${u.birim} var?`} onKapat=${() => setSay(false)} onKaydet=${(n) => { depo.stokSay(u.id, n); setSay(false); }} />`}
   </div>`;
+}
+
+/** Sık alınanlar kataloğu: tik koyarak hızlı seçimi belirle. Kalanların sırası korunur, yeniler katalog sırasıyla sona eklenir. */
+function KatalogDialog({ secili, onKapat, onKaydet }) {
+  const k = (s) => s.toLocaleLowerCase('tr-TR');
+  const [liste, setListe] = useState(secili);
+  const var_ = (ad) => liste.some((x) => k(x) === k(ad));
+  const degis = (ad) => setListe(var_(ad) ? liste.filter((x) => k(x) !== k(ad)) : [...liste, ad]);
+  const katalogda = new Set(URUN_KATALOG.flatMap((g) => g.urunler.map(([ad]) => k(ad))));
+  const kendi = secili.filter((ad) => !katalogda.has(k(ad)));
+  const grup = (baslik, urunler) => html`<div class="lk soluk" style="margin-top:6px">${baslik}</div>
+    <div class="izgara5">${urunler.map(([ad, e]) => html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad, tamAd: ad, emoji: e, secili: var_(ad), onClick: () => degis(ad),
+      etiket: ad + (var_(ad) ? ' seçili' : ' seç') }} />`)}</div>`;
+  return html`<${Dialog} baslik="Sık alınanlar" onKapat=${onKapat} butonlar=${[
+    { metin: 'Vazgeç', onClick: onKapat },
+    { metin: `Kaydet (${liste.length})`, onClick: () => onKaydet(liste) },
+  ]}>
+    <span class="bk soluk">Hızlı seçte olmasını istediklerine dokun, tik koy.</span>
+    ${URUN_KATALOG.map((g) => grup(g.grup, g.urunler))}
+    ${kendi.length > 0 && grup('Senin eklediklerin', kendi.map((ad) => [ad, urunEmoji(ad)]))}
+  </${Dialog}>`;
 }

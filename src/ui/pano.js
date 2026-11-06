@@ -11,7 +11,7 @@ import { ZincirSatiri, ZincirKurDialog } from './zincir.js';
 import { turRengi } from './ajanda.js';
 import { useKayitta, sesToggle } from './ses.js';
 import { Is } from './islem.js';
-import { urunIkonu, urunEmoji } from '../ikonlar.js';
+import { urunIkonu, urunEmoji, URUN_KATALOG } from '../ikonlar.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
@@ -81,22 +81,14 @@ export function PanoEkrani() {
     { anahtar: 'ses', ad: kayit.kayitta ? 'Durdur' : 'Sesli not', ikon: kayit.kayitta ? 'durdur' : 'mikrofon', renk: RENK.mercan, bilgi: kayit.kayitta ? 'kayıtta' : 'bas, konuş', onClick: sesToggle },
   ].map((b) => ({ ...b, id: b.anahtar, tamAd: b.ad, zemin: saydam(b.renk, 18) }));
 
-  // Alışveriş listesi simgeleri: hızlı seç ürünleri; listede olan vurgulu (dokun: ekle / çıkar).
-  const acikListe = depo.acikAlisveris().filter((m) => !m.alindi);
-  const listedeki = (ad) => acikListe.find((m) => m.ad.toLocaleLowerCase('tr-TR') === ad.toLocaleLowerCase('tr-TR'));
-  const hizliAdlar = Ayar.hizliSecimler;
-  const listeOgeleri = hizliAdlar.map((ad) => {
-    const m = listedeki(ad);
-    return { id: 'u:' + ad, ad, tamAd: ad, ikon: urunIkonu(ad), emoji: urunEmoji(ad), renk: RENK.mercan, zemin: saydam(RENK.mercan, 18), secili: !!m,
-      etiket: m ? ad + ' listeden çıkar' : ad + ' listeye ekle',
-      onClick: () => {
-        const v = listedeki(ad);
-        if (v) { M.db.sil('alisveris', v.id); sonIslem(ad + ' listeden çıkarıldı', 0); }
-        else { const u = depo.urunler().find((x) => x.ad.toLocaleLowerCase('tr-TR') === ad.toLocaleLowerCase('tr-TR'));
-          depo.alisveriseEkle(ad, u?.id ?? null, u?.ikon && u.ikon !== 'paket' ? u.ikon : urunIkonu(ad), false, false); sonIslem(ad + ' listeye eklendi', 0); }
-      } };
-  });
-  const listeDisi = acikListe.filter((m) => !hizliAdlar.some((ad) => ad.toLocaleLowerCase('tr-TR') === m.ad.toLocaleLowerCase('tr-TR')));
+  // Alışveriş listesi: sadece Alışveriş sekmesinde listede olan (henüz alınmamış) ürünler. Simgesi olanlar kutu,
+  // elle yazılanlar (simgesi yok) altta yan yana. Dokununca Alışveriş sekmesi açılır.
+  const acikListe = depo.acikAlisveris().filter((m) => !m.alindi).sort((a, b) => a.eklenme - b.eklenme);
+  const hizliAd = new Set([...Ayar.hizliSecimler, ...URUN_KATALOG.flatMap((g) => g.urunler.map(([ad]) => ad))].map((x) => x.toLocaleLowerCase('tr-TR')));
+  const simgeli = (m) => hizliAd.has(m.ad.trim().toLocaleLowerCase('tr-TR')) && urunEmoji(m.ad) !== '🛒';
+  const listeOgeleri = acikListe.filter(simgeli).map((m) => ({ id: 'l:' + m.id, ad: m.ad, tamAd: m.ad, emoji: urunEmoji(m.ad),
+    secili: false, etiket: m.ad + ' (alışveriş listesinde)', onClick: () => git('alim') }));
+  const listeDisi = acikListe.filter((m) => !simgeli(m));
 
   const tumOgeler = (kat) => {
     if (kat.sayac) return [...kat.sayac.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean), ...(kat.digerleri ? digerSayaclar : [])].map(sayacOgesi);
@@ -133,18 +125,24 @@ export function PanoEkrani() {
     </div>
     ${PANO_KATEGORI.map((kat) => {
       const ogeler = tumOgeler(kat);
-      if (!ogeler.length) return null;
+      if (!ogeler.length && !kat.liste) return null;
+      if (kat.liste) return html`<section key=${kat.k} class="pano-kat" aria-label=${kat.ad}>
+        <button class="satir pano-kat-bas" style="width:100%;text-align:left" onClick=${() => git('alim')}>
+          <span class="lk soluk dolu">${kat.ad} · ${acikListe.length} ürün</span><${Ikon} ad="ileri" boy=${13} renk="var(--soluk)" /></button>
+        ${acikListe.length === 0 && html`<div class="bk soluk" style="padding:0 2px">Liste boş.</div>`}
+        ${ogeler.length > 0 && html`<div class="izgara6">${ogeler.map((o) => html`<${KucukKutu} key=${o.id} o=${o} dar />`)}</div>`}
+        ${listeDisi.length > 0 && html`<div class="sar" style="gap:6px">${listeDisi.map((m) => html`<button key=${m.id} class="liste-cip" onClick=${() => git('alim')}>${m.ad}</button>`)}</div>`}
+      </section>`;
       const secili = seciliIdler(kat, ogeler);
       const gorunen = secili.map((id) => ogeler.find((o) => o.id === id)).filter(Boolean);
       return html`<section key=${kat.k} class="pano-kat" aria-label=${kat.ad}>
         <div class="satir pano-kat-bas">
-          <span class="lk soluk dolu">${kat.ad}${kat.liste ? ` · ${acikListe.length} ürün` : ''}</span>
+          <span class="lk soluk dolu">${kat.ad}</span>
           <button class="ucnokta" aria-label=${kat.ad + ': favorileri seç'} onClick=${() => setFavoriKat(kat.k)}>⋯</button>
         </div>
         ${gorunen.length === 0
           ? html`<button class="bk soluk" style="padding:4px 2px 2px;text-align:left" onClick=${() => setFavoriKat(kat.k)}>Favori yok. ⋯ ile seç.</button>`
           : html`<div class=${kat.dar ? 'izgara6' : 'izgara5'}>${gorunen.map((o) => html`<${KucukKutu} key=${o.id} o=${o} dar=${kat.dar} />`)}</div>`}
-        ${kat.liste && listeDisi.length > 0 && html`<button class="bk soluk" style="text-align:left;padding:2px" onClick=${() => git('alim')}>Listede ayrıca: ${listeDisi.map((m) => m.ad).join(', ')}</button>`}
       </section>`;
     })}
   </div>
