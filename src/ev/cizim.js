@@ -67,14 +67,14 @@ export function esyaCiz(ctx, k, e, durum = {}) {
     }
     case 'kanepe': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h * 0.5, R);
-      kutu(ctx, k, e.x, e.y, e.g * 0.3, e.d, z + e.h * 0.5, e.h * 0.5, ton(R, 0.92));
-      for (let i = 0; i < 3; i++) kutu(ctx, k, e.x + e.g * 0.3, e.y + 0.05 + i * (e.d - 0.1) / 3, e.g * 0.68, (e.d - 0.1) / 3 - 0.04, z + e.h * 0.5, 0.1, ton(R, 1.08));
+      kutu(ctx, k, e.x + e.g * 0.7, e.y, e.g * 0.3, e.d, z + e.h * 0.5, e.h * 0.5, ton(R, 0.92));
+      for (let i = 0; i < 3; i++) kutu(ctx, k, e.x + e.g * 0.02, e.y + 0.05 + i * (e.d - 0.1) / 3, e.g * 0.68, (e.d - 0.1) / 3 - 0.04, z + e.h * 0.5, 0.1, ton(R, 1.08));
       kutu(ctx, k, e.x + e.g * 0.4, e.y + e.d * 0.2, 0.35, 0.35, z + e.h * 0.62, 0.22, '#E6E2D8');
       break;
     }
     case 'koltuk': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h * 0.5, R);
-      kutu(ctx, k, e.x, e.y, 0.3, e.d, z + e.h * 0.5, e.h * 0.5, ton(R, 0.93));
+      kutu(ctx, k, e.x + e.g - 0.3, e.y, 0.3, e.d, z + e.h * 0.5, e.h * 0.5, ton(R, 0.93));
       kutu(ctx, k, e.x, e.y, e.g, 0.25, z + e.h * 0.5, e.h * 0.3, ton(R, 0.96));
       break;
     }
@@ -83,8 +83,8 @@ export function esyaCiz(ctx, k, e, durum = {}) {
       for (const [ax, ay] of [[0, 0], [e.g - ayak, 0], [0, e.d - ayak], [e.g - ayak, e.d - ayak]]) kutu(ctx, k, e.x + ax, e.y + ay, ayak, ayak, z, e.h - 0.06, ton(R, 0.8), { faset: false });
       kutu(ctx, k, e.x, e.y, e.g, e.d, z + e.h - 0.06, 0.06, R);
       if (e.id === 'ofismasa') {
-        kutu(ctx, k, e.x + 0.85, e.y + 0.4, 0.06, 1.3, z + e.h, 0.45, '#1A1C22');
-        poli(ctx, [k.ekran(e.x + 0.85, e.y + 0.47, e.h + 0.42), k.ekran(e.x + 0.85, e.y + 1.63, e.h + 0.42), k.ekran(e.x + 0.85, e.y + 1.63, e.h + 0.06), k.ekran(e.x + 0.85, e.y + 0.47, e.h + 0.06)], durum.gece ? '#9EC7FF' : '#6E8FC9');
+        kutu(ctx, k, e.x + 0.35, e.y + 0.4, 0.06, 1.3, z + e.h, 0.45, '#1A1C22');
+        poli(ctx, [k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.06), k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.06)], durum.gece ? '#9EC7FF' : '#6E8FC9');
       }
       if (e.id === 'yemekmasa') for (let i = 0; i < 3; i++) for (const sx of [-0.5, e.g + 0.05]) kutu(ctx, k, e.x + sx, e.y + 0.2 + i * 0.75, 0.45, 0.45, 0, 0.45, '#EFEDE8');
       if (e.id === 'bmasa') for (const [sx, sy] of [[-0.5, 0.2], [-0.5, 0.85], [e.g + 0.05, 0.2], [e.g + 0.05, 0.85]]) kutu(ctx, k, e.x + sx, e.y + sy, 0.45, 0.45, 0, 0.45, '#2A2C30');
@@ -132,8 +132,8 @@ export function esyaCiz(ctx, k, e, durum = {}) {
     }
     case 'tv': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h, R);
-      kutu(ctx, k, e.x + 0.15, e.y + 0.2, 0.08, e.d - 0.4, e.h, 1.0, '#141518');
-      poli(ctx, [k.ekran(e.x + 0.15, e.y + 0.27, e.h + 0.95), k.ekran(e.x + 0.15, e.y + e.d - 0.27, e.h + 0.95), k.ekran(e.x + 0.15, e.y + e.d - 0.27, e.h + 0.07), k.ekran(e.x + 0.15, e.y + 0.27, e.h + 0.07)], '#23262E');
+      kutu(ctx, k, e.x + e.g - 0.3, e.y + 0.2, 0.08, e.d - 0.4, e.h, 1.0, '#141518');
+      poli(ctx, [k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.07), k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.07)], '#23262E');
       kutu(ctx, k, e.x + 0.1, e.y + 0.1, 0.3, 0.3, e.h, 0.35, '#4E8B4E');
       break;
     }
@@ -176,7 +176,7 @@ export function esyaCiz(ctx, k, e, durum = {}) {
     case 'tezgah': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h - 0.05, R);
       kutu(ctx, k, e.x - 0.02, e.y - 0.02, e.g + 0.04, e.d + 0.04, z + e.h - 0.05, 0.05, '#F1EFEA');
-      if (e.id === 'tezgah') kutu(ctx, k, e.x + 0.25, e.y, 0.4, e.d, 1.45, 0.75, R);
+      if (e.id === 'tezgah') kutu(ctx, k, e.x, e.y, 0.4, e.d, 1.45, 0.75, R);
       if (e.id === 'kahvetezgah') kutu(ctx, k, e.x, e.y, e.g, 0.35, 1.45, 0.75, R);
       break;
     }
@@ -247,8 +247,8 @@ export function esyaCiz(ctx, k, e, durum = {}) {
       // Pfand kasası: kulübede biriken şişeler görünür
       const n = Math.min(24, durum.pfandKulube ?? 0);
       if (n > 0) {
-        kutu(ctx, k, e.x + e.g + 0.12, e.y + 1.0, 0.55, 0.7, 0, 0.32, '#3E7D5A');
-        for (let i = 0; i < Math.min(12, Math.ceil(n / 2)); i++) kutu(ctx, k, e.x + e.g + 0.17 + (i % 3) * 0.16, e.y + 1.05 + ((i / 3) | 0) * 0.16, 0.08, 0.08, 0.32, 0.22, i % 2 ? '#A7D3B5' : '#E8F0E6', { faset: false });
+        kutu(ctx, k, e.x - 0.7, e.y + 1.0, 0.55, 0.7, 0, 0.32, '#3E7D5A');
+        for (let i = 0; i < Math.min(12, Math.ceil(n / 2)); i++) kutu(ctx, k, e.x - 0.65 + (i % 3) * 0.16, e.y + 1.05 + ((i / 3) | 0) * 0.16, 0.08, 0.08, 0.32, 0.22, i % 2 ? '#A7D3B5' : '#E8F0E6', { faset: false });
       }
       break;
     }
@@ -339,10 +339,10 @@ export function zeminCiz(ctx, k, durum) {
   { const a = k.ekran(0, 22.65), b = k.ekran(18, 22.65); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
   ctx.setLineDash([]);
   ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.5;
-  for (const px of [3.2, 6.9, 10.6, 14.3, 18]) { const a = k.ekran(px, 18.9), b = k.ekran(px, 21.4); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  for (const px of [0, 3.7, 7.4, 11.1, 14.8]) { const a = k.ekran(px, 18.9), b = k.ekran(px, 21.4); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
   // bahçe
   poli(ctx, dort(0, 12.5, 18, 6), '#86AE5C');
-  if (durum.cimUzun) { ctx.strokeStyle = '#5E8E3C'; ctx.lineWidth = 1.2; for (let i = 0; i < 160; i++) { const x = (i * 7.3) % 18, y = 15.8 + ((i * 3.7) % 2.6); if (x > 0.8 && x < 3.4 && y < 17.4) continue; const [a, b] = k.ekran(x, y); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(a + 1.5, b - 5 * k.zum); ctx.stroke(); } }
+  if (durum.cimUzun) { ctx.strokeStyle = '#5E8E3C'; ctx.lineWidth = 1.2; for (let i = 0; i < 160; i++) { const x = (i * 7.3) % 18, y = 15.8 + ((i * 3.7) % 2.6); if (x > 14.6 && x < 17.2 && y < 17.4) continue; const [a, b] = k.ekran(x, y); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(a + 1.5, b - 5 * k.zum); ctx.stroke(); } }
   // ev zemini
   for (const o of ODALAR) for (const [x, y, g, d] of o.r) poli(ctx, dort(x, y, g, d), o.zemin, ton(o.zemin, 0.85));
   // ev tabanı (dış duvarın altı)

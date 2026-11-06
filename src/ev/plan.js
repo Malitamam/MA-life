@@ -150,6 +150,16 @@ export const ALANLAR = [
   { id: 'z-yol', ad: 'YOLA ÇIK', x: 8.0, y: 21.8, g: 3.0, d: 1.0, e: 'kapi', vurgu: true },
 ];
 
+// Kroki ekranda bahçe aşağıda okunur: solda mutfak, sağda Nehir'in odası. Ölçüler yukarıda
+// yatak odasından başlayarak girildi; burada tek seferde aynalanır (x → 18 − x).
+{
+  const G = DUNYA.gen;
+  for (const o of [...ODALAR, ...DIS]) o.r = o.r.map(([x, y, g, d]) => [G - x - g, y, g, d]);
+  for (let i = 0; i < KAPILAR.length; i++) { const [x1, y1, x2, y2] = KAPILAR[i]; KAPILAR[i] = [Math.min(G - x1, G - x2), y1, Math.max(G - x1, G - x2), y2]; }
+  const [a, , b] = DIS_KAPI; DIS_KAPI[0] = G - b; DIS_KAPI[2] = G - a;
+  for (const e of [...ESYALAR, ...ALANLAR]) e.x = G - e.x - e.g;
+}
+
 /** Bir noktanın bölgesi (oda id'si, 'bahce', 'otopark' ya da null = dışarısı). */
 export function bolge(x, y) {
   for (const o of ODALAR) for (const [rx, ry, rg, rd] of o.r) if (x >= rx && x < rx + rg && y >= ry && y < ry + rd) return o.id;
@@ -191,6 +201,7 @@ export function izgaraKur() {
   }
   // dış kenarlar (evin dışarıya bakan sınırı: x=0, y=0)
   for (let j = 0; j < NY; j++) if (evMi(hucre[j * NX])) kenarlar.push([0, j * S, 0, (j + 1) * S]);
+  for (let j = 0; j < NY; j++) if (evMi(hucre[j * NX + NX - 1])) kenarlar.push([NX * S, j * S, NX * S, (j + 1) * S]);
   for (let i = 0; i < NX; i++) if (evMi(hucre[i]) && !((i + 0.5) * S > DIS_KAPI[0] && (i + 0.5) * S < DIS_KAPI[2])) kenarlar.push([i * S, 0, (i + 1) * S, 0]);
   return { NX, NY, S, hucre, dolu, sagKapali, altKapali, kenarlar: birlestir(kenarlar) };
 }

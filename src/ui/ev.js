@@ -331,7 +331,7 @@ function DisariSayfasi({ ulasim, bugun, pf, onKapat, kutla, tutarIste, setUlasim
 // ---------------------------------------------------------------- 2.5D gezinti
 
 const KONUM = 'mali_ev_konum';
-function konumAl() { try { const k = JSON.parse(localStorage.getItem(KONUM)); if (Array.isArray(k) && bolge(k[0], k[1])) return k; } catch {} return [8.5, 2.2]; }
+function konumAl() { try { const k = JSON.parse(localStorage.getItem(KONUM)); if (Array.isArray(k) && bolge(k[0], k[1])) return k; } catch {} return [9.5, 2.2]; }
 
 function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
   const sa = useRef(false); sa.current = sayfaAcik;
@@ -456,7 +456,7 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
   const odaGit = (id) => {
     const o = [...ODALAR, ...DIS].find((x) => x.id === id); if (!o) return;
     const [x, y, g, dd] = o.r[0];
-    const hedef = id === 'bahce' ? [7, 15] : id === 'otopark' ? [4.5, 18.9] : [x + g / 2, y + dd / 2];
+    const hedef = id === 'bahce' ? [11, 15] : id === 'otopark' ? [13.5, 18.9] : [x + g / 2, y + dd / 2];
     yuru(hedef[0], hedef[1]);
   };
 
@@ -505,8 +505,8 @@ function ciz(ctx, o, durum) {
   // vakti gelen işaretleri (en fazla 3)
   for (const e of durum.vakit) { const n = ESYALAR.find((x) => x.e === e); if (!n) continue; const [sx, sy] = k.ekran(n.x + n.g / 2, n.y + n.d / 2, (n.z ?? 0) + n.h + 0.6); isaretCiz(ctx, sx, sy, o.t); }
   // Pfand etiketleri
-  if (durum.pfandKulube > 0) { const [sx, sy] = k.ekran(1.1, 14, 2.8); hap(ctx, sx, sy, `KULÜBE ${durum.pfandKulube}`, { arka: '#3E7D5A' }); }
-  if (durum.pfandAraba > 0) { const [sx, sy] = k.ekran(4.75, 19.95, 2.1); hap(ctx, sx, sy, `BAGAJ ${durum.pfandAraba}`, { arka: '#B5562F' }); }
+  if (durum.pfandKulube > 0) { const [sx, sy] = k.ekran(16.9, 14, 2.8); hap(ctx, sx, sy, `KULÜBE ${durum.pfandKulube}`, { arka: '#3E7D5A' }); }
+  if (durum.pfandAraba > 0) { const [sx, sy] = k.ekran(13.25, 19.95, 2.1); hap(ctx, sx, sy, `BAGAJ ${durum.pfandAraba}`, { arka: '#B5562F' }); }
   for (const u of o.ucan) { const [sx, sy] = k.ekran(u.dunya[0], u.dunya[1], 2.4); ucanYaziCiz(ctx, sx, sy, u.metin, u.t); }
 }
 const duvarlarCache = (o) => o._duvar;
@@ -525,13 +525,13 @@ function Kroki({ durum, isler, bugun, onEylem, onOda }) {
       ${ESYALAR.filter((e) => e.h > 0.03 || e.e).map((e) => html`<rect x=${e.x} y=${e.y} width=${e.g} height=${e.d} rx="0.08" fill=${e.renk} stroke="rgba(0,0,0,.35)" stroke-width="0.04"
         style=${e.e ? 'cursor:pointer' : 'pointer-events:none'} onClick=${e.e ? (ev) => { ev.stopPropagation(); onEylem(e.e); } : null} />`)}
       ${iz.kenarlar.map(([a, b, c, d]) => html`<line x1=${a} y1=${b} x2=${c} y2=${d} stroke="#4B4038" stroke-width="0.16" stroke-linecap="square" />`)}
-      <line x1="0" y1="18.5" x2="2.5" y2="18.5" stroke="#3F6B3A" stroke-width="0.4" /><line x1="3.5" y1="18.5" x2="18" y2="18.5" stroke="#3F6B3A" stroke-width="0.4" />
+      <line x1="0" y1="18.5" x2="14.5" y2="18.5" stroke="#3F6B3A" stroke-width="0.4" /><line x1="15.5" y1="18.5" x2="18" y2="18.5" stroke="#3F6B3A" stroke-width="0.4" />
       ${ALANLAR.filter((a) => !a.gizli && a.g > 0).map((a) => html`<rect x=${a.x} y=${a.y} width=${a.g} height=${a.d} rx="0.1" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="0.05" stroke-dasharray="0.18 0.12"
         style="cursor:pointer" onClick=${(ev) => { ev.stopPropagation(); onEylem(a.e); }} />`)}
       ${[...ODALAR, ...DIS].map((o) => { const [x, y, g, d] = o.r[0]; return html`<text x=${x + g / 2} y=${y + d / 2} text-anchor="middle" class="ev-kroki-yazi">${o.ad}</text>`; })}
       ${[...vakit].map((e) => { const n = ESYALAR.find((x) => x.e === e); return n && html`<g style="pointer-events:none"><circle cx=${n.x + n.g / 2} cy=${n.y + n.d / 2} r="0.38" fill="#F2B33D" stroke="#fff" stroke-width="0.06" /><text x=${n.x + n.g / 2} y=${n.y + n.d / 2 + 0.17} text-anchor="middle" class="ev-kroki-unlem">!</text></g>`; })}
-      ${durum.pfandKulube > 0 && html`<text x="1.15" y="15.3" text-anchor="middle" class="ev-kroki-yazi">Pfand ${durum.pfandKulube}</text>`}
-      ${durum.pfandAraba > 0 && html`<text x="4.75" y="21.4" text-anchor="middle" class="ev-kroki-yazi">Bagaj ${durum.pfandAraba}</text>`}
+      ${durum.pfandKulube > 0 && html`<text x="16.85" y="15.3" text-anchor="middle" class="ev-kroki-yazi">Pfand ${durum.pfandKulube}</text>`}
+      ${durum.pfandAraba > 0 && html`<text x="13.25" y="21.4" text-anchor="middle" class="ev-kroki-yazi">Bagaj ${durum.pfandAraba}</text>`}
       <circle cx=${x0} cy=${y0} r="0.32" fill="#EE8A6E" stroke="#17141A" stroke-width="0.12" style="pointer-events:none" />
     </svg>
     <div class="bk soluk" style="text-align:center;padding:6px 16px 10px">Odaya dokun: o odanın işleri. Eşyaya dokun: hemen kayıt.</div>
