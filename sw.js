@@ -1,7 +1,7 @@
 // Önce ağ: internet varken her açılışta en yeni sürüm gelir; yoksa son kaydedilen sürüm açılır.
 const ON_BELLEK = 'mali-v1';
 
-const DOSYALAR = ["./", "index.html", "stil.css", "manifest.webmanifest", "fonts/quicksand.ttf", "vendor/preact-htm.js", "ikon/192.png", "ikon/512.png", "src/app.js", "src/db.js", "src/depo.js", "src/ikonlar.js", "src/katalog.js", "src/mantik.js", "src/sistem.js", "src/tarih.js", "src/ui/ajanda.js", "src/ui/alim.js", "src/ui/durum.js", "src/ui/ekstra.js", "src/ui/gunluk.js", "src/ui/islem.js", "src/ui/notlar.js", "src/ui/ortak.js", "src/ui/pano.js", "src/ui/sayac.js", "src/ui/ses.js", "src/ui/takip.js", "src/ui/zincir.js"];
+const DOSYALAR = ["./", "index.html", "stil.css", "manifest.webmanifest", "fonts/quicksand.ttf", "vendor/preact-htm.js", "ikon/192.png", "ikon/512.png", "src/app.js", "src/db.js", "src/depo.js", "src/ikonlar.js", "src/katalog.js", "src/mantik.js", "src/sistem.js", "src/tarih.js", "src/ui/ajanda.js", "src/ui/alim.js", "src/ui/durum.js", "src/ui/ekstra.js", "src/ui/gunluk.js", "src/ui/islem.js", "src/ui/notlar.js", "src/ui/ortak.js", "src/ui/pano.js", "src/ui/raf.js", "src/ui/sayac.js", "src/ui/ses.js", "src/ui/takip.js", "src/ui/zincir.js"];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

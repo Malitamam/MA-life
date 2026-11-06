@@ -366,6 +366,9 @@ export const KATALOG_URUNLER = URUN_KATALOG.flatMap((g) => g.urunler);
 export const sade = (s) => String(s ?? '').toLocaleLowerCase('tr-TR').trim()
   .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u');
 
+const GRUP = new Map(URUN_KATALOG.flatMap((g) => g.urunler.map(([ad]) => [sade(ad), g.grup])));
+/** Ürünün katalog grubu (raf adı); tam ad, yoksa son kelime. */
+export const katalogGrup = (ad) => { const s = sade(ad); return GRUP.get(s) ?? GRUP.get(s.split(/\s+/).pop()) ?? null; };
 const EMOJI = new Map(KATALOG_URUNLER.map(([ad, e]) => [sade(ad), e]));
 const ROZET = new Map(KATALOG_URUNLER.filter(([, , r]) => r).map(([ad, , r]) => [sade(ad), r]));
 /** Katalogdaki tam ad için köşe rozeti (yoksa null). */

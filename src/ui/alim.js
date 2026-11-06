@@ -6,6 +6,7 @@ import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi,
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
 import { KART_TUTARLARI, KucukKutu, UrunSimge } from './pano.js';
+import { RafGorunumu } from './raf.js';
 import { urunIkonu, urunEmoji, urunRozet, URUN_KATALOG } from '../ikonlar.js';
 import { KATALOG_URUNLER, oneriler, sade } from '../katalog.js';
 import { Is } from './islem.js';
@@ -148,6 +149,8 @@ export function StokEkrani() {
   const bugun = useBugun();
   const [yeniUrun, setYeniUrun] = useState(false);
   const [sayilacak, setSayilacak] = useState(null);
+  const [gorunum, setGorunum] = useState(() => { try { return Number(localStorage.getItem('mali_stok_gorunum') ?? 0); } catch { return 0; } });
+  const gorunumSec = (i) => { setGorunum(i); try { localStorage.setItem('mali_stok_gorunum', String(i)); } catch {} };
   const urunler = depo.urunler();
   const alimlar = M.db.hepsi('alimlar');
   const acik = depo.acikAlisveris();
@@ -170,7 +173,14 @@ export function StokEkrani() {
         <span class="bm dolu tek" style="margin-left:9px">${u.ad} · şu an ${u.stok} ${u.birim}</span>
         <${MetinButon} onClick=${() => setSayilacak(u)}>Say</${MetinButon}></div>`)}
     </${Kart}>`}
-    <${Kart} dikey=${4}>${sirali.map((u, i) => {
+    <div><${Segment} secenekler=${['Raf', 'Liste']} secili=${gorunum} onSec=${gorunumSec} /></div>
+    ${gorunum === 0 && html`<${RafGorunumu} urunler=${sirali} bugun=${bugun} onSay=${setSayilacak} bilgi=${(u) => {
+      const ul = grup.get(u.id) ?? [];
+      const gunluk = u.stokTakip ? StokMantik.gunlukTuketim(ul, u.stok, bugun) : null;
+      const kalan = StokMantik.kalanGun(u.stok, gunluk);
+      return { kalan, alinmali: StokMantik.alinmali(u, kalan), sayim: StokMantik.sayimVakti(u, bugun) };
+    }} />`}
+    ${gorunum === 1 && html`<${Kart} dikey=${4}>${sirali.map((u, i) => {
       const ul = grup.get(u.id) ?? [];
       const o = AlimMantik.ozet(ul, bugun);
       const gunluk = u.stokTakip ? StokMantik.gunlukTuketim(ul, u.stok, bugun) : null;
@@ -192,7 +202,7 @@ export function StokEkrani() {
           ${alinmali && (listedeMi ? html`<span class="bk soluk">listede</span>`
             : html`<${MetinButon} onClick=${(e) => { e.stopPropagation(); depo.alisveriseEkle(u.ad, u.id, u.ikon); }}>Listeye</${MetinButon}>`)}
         </div></div>`;
-    })}</${Kart}>
+    })}</${Kart}>`}
     ${yeniUrun && html`<${UrunDialog} onKapat=${() => setYeniUrun(false)} onKaydet=${(u) => { Is.urunKaydet(u); setYeniUrun(false); }} />`}
     ${sayilacak && html`<${StokSayDialog} u=${sayilacak} onKapat=${() => setSayilacak(null)} onKaydet=${(n) => { depo.stokSay(sayilacak.id, n); setSayilacak(null); }} />`}
   </${Ekran}>`;
