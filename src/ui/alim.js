@@ -1,16 +1,26 @@
 // Alışveriş, Stok, Takviye, Şirket kartı, ürün detayı ve pencereleri (AlimEkrani.kt, UrunDetay.kt).
 import { html, useState } from '../../vendor/preact-htm.js';
-import { M, Ayar, useVeri, useBugun, git, geri } from './durum.js';
+import { M, Ayar, useVeri, useBugun, git, geri, sonIslem } from './durum.js';
 import { Ikon, Kart, Cip, Segment, YuvarlakButon, IkonButon, TikButon, MetinButon, Dialog, Girdi, Anahtar, SesleYaz, uzunBas, sadeceSayi, RENK } from './ortak.js';
 import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi, tutarMetni as tl } from '../mantik.js';
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
 import { KART_TUTARLARI, KucukKutu } from './pano.js';
 import { urunIkonu, urunEmoji, URUN_KATALOG } from '../ikonlar.js';
+import { KATALOG_URUNLER, oneriler, sade } from '../katalog.js';
 import { Is } from './islem.js';
 
 const esitTr = (a, b) => a.trim().toLocaleLowerCase('tr-TR') === b.trim().toLocaleLowerCase('tr-TR');
 const kucukTr = (s) => s.toLocaleLowerCase('tr-TR');
+// Sık eklenenler: bir ürün SIK_ESIK kez listeye eklenince kendiliğinden hızlı seçe (sık alınanlara) girer.
+const SIK_ESIK = 3;
+function sikOku() { try { return JSON.parse(M.db.ayarAl('urun_sik', '{}')) ?? {}; } catch { return {}; } }
+function sikArtir(ad) {
+  const s = sikOku(); const k = sade(ad);
+  s[k] = { ad, n: (s[k]?.n ?? 0) + 1 };
+  M.db.ayarYaz('urun_sik', JSON.stringify(s));
+  return s[k].n;
+}
 const buyukIlk = (s) => s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
 const euroGirdi = (sent) => (sent == null ? '' : `${Math.floor(sent / 100)},${String(sent % 100).padStart(2, '0')}`);
 
@@ -36,11 +46,26 @@ export function AlisverisEkrani() {
   const simdi = depo.simdi();
   const gorunen = bekleyen.filter((m) => m.online === (online === 1));
   const alinanlar = M.db.hepsi('alisveris').filter((m) => m.alindi);
-  const ekle = (ad) => {
-    const u = urunler.find((x) => esitTr(x.ad, ad));
-    depo.alisveriseEkle(buyukIlk(ad.trim()), u?.id ?? null, u?.ikon && u.ikon !== 'paket' ? u.ikon : urunIkonu(ad), false, online === 1);
-  };
   const listede = new Set(bekleyen.map((m) => kucukTr(m.ad)));
+  const sik = sikOku();
+  // Öneri adayları: katalog + hızlı seç + daha önce eklenenler (tekrarsız, sık eklenen önde).
+  const adaylar = [];
+  const aday = new Set();
+  for (const [ad, n] of [...Object.values(sik).map((x) => [x.ad, x.n]), ...hizli.map((x) => [x, 0]), ...KATALOG_URUNLER.map(([x]) => [x, 0])]) {
+    const k = sade(ad); if (aday.has(k)) continue; aday.add(k);
+    adaylar.push({ ad, emoji: urunEmoji(ad), sayi: sik[k]?.n ?? n });
+  }
+  const ekle = (ham) => {
+    const k = sade(ham);
+    if (!k) return;
+    const ad = adaylar.find((x) => sade(x.ad) === k)?.ad ?? buyukIlk(ham.trim()); // "sut" yazınca "Süt"
+    if (listede.has(kucukTr(ad))) { sonIslem(`${ad} zaten listede`, 0); return; }
+    const u = urunler.find((x) => esitTr(x.ad, ad));
+    depo.alisveriseEkle(ad, u?.id ?? null, u?.ikon && u.ikon !== 'paket' ? u.ikon : urunIkonu(ad), false, online === 1);
+    const n = sikArtir(ad);
+    if (n >= SIK_ESIK && !hizli.some((x) => sade(x) === k)) { Ayar.hizliSecimler = [...hizli, ad]; sonIslem(`${ad} sık alınanlara eklendi`, 0); }
+  };
+  const onerilen = oneriler(yeni, adaylar, 8);
   const azalan = urunler.filter((u) => StokMantik.azMi(u) && !listede.has(kucukTr(u.ad)));
   // Android'de "alındı" işaretlileri liste sonunda soluk durur, "Alışverişi bitir" ile temizlenir
   const liste = [...gorunen, ...alinanlar.filter((m) => m.online === (online === 1))];
@@ -52,7 +77,13 @@ export function AlisverisEkrani() {
       <div class="dolu"><${Girdi} deger=${yeni} onDeger=${setYeni} ipucu="Ekle: süt, ekmek…" onKeyDown=${(e) => { if (e.key === 'Enter' && yeni.trim()) { ekle(yeni); setYeni(''); } }} /></div>
       <${SesleYaz} onMetin=${setYeni} />
       <${IkonButon} ikon="arti" aciklama="Ekle" boy=${20} onClick=${() => { if (yeni.trim()) { ekle(yeni); setYeni(''); } }} />
-    </div></${Kart}>
+    </div>
+    ${onerilen.length > 0 && html`<div class="sar oneriler" style="gap:6px;padding-top:8px">${onerilen.map((o) => {
+      const var_ = listede.has(kucukTr(o.ad));
+      return html`<button key=${o.ad} class=${'oneri' + (var_ ? ' var' : '')} aria-label=${o.ad + (var_ ? ' (listede)' : ' listeye ekle')}
+        onClick=${() => { ekle(o.ad); setYeni(''); }}><span class="oneri-e" aria-hidden="true">${o.emoji}</span>${o.ad}${var_ ? ' ✓' : ''}</button>`;
+    })}</div>`}
+    </${Kart}>
     <div>
       <div class="satir"><span class="lk soluk dolu">Hızlı seç</span>
         <${MetinButon} onClick=${() => setKatalog(true)}>Listeden seç</${MetinButon}>
