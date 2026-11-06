@@ -144,3 +144,6 @@ textarea.girdi { resize: vertical; min-height: 120px; }
 .kkutu { height: 66px; border-radius: 12px; background: var(--yuzey); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 2px; position: relative; text-align: center; min-width: 0; gap: 2px; }
 .kkutu-ad { font-size: 11px; font-weight: 700; line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kkutu-bilgi { font-size: 9.5px; color: var(--soluk); line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.izgara6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.kkutu.dar { height: 54px; border-radius: 10px; padding: 3px 1px; }
+.kkutu.dar .kkutu-ad { font-size: 10px; }

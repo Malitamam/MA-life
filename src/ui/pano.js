@@ -14,7 +14,7 @@ import { Is } from './islem.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
-const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve paketi' };
+const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve' };
 const kisaAd = (ad) => KISA[ad] ?? ad;
 
 /**
@@ -22,16 +22,23 @@ const kisaAd = (ad) => KISA[ad] ?? ad;
  * buton kategorilerinde butonun anahtarı. varsayilan: favori seçilmemişken gösterilenler (null = hepsi).
  */
 export const PANO_KATEGORI = [
-  { k: 'mutfak', ad: 'Mutfak ve çamaşır', sayac: ['bulasik_calis', 'bulasik_bosalt', 'camasir', 'kurutucu', 'asma'], varsayilan: ['bulasik_calis', 'camasir', 'kurutucu', 'asma'] },
-  { k: 'temizlik', ad: 'Temizlik', sayac: ['cop', 'dyson', 'roborock'], varsayilan: null },
-  { k: 'diger', ad: 'Diğer sayaçlar', sayac: 'diger', varsayilan: null },
+  { k: 'sayac', ad: 'Hızlı sayaçlar', sayac: ['bulasik_calis', 'bulasik_bosalt', 'camasir', 'kurutucu', 'asma', 'cop', 'dyson', 'roborock'], digerleri: true, dar: true,
+    varsayilan: ['bulasik_calis', 'camasir', 'kurutucu', 'asma', 'cop', 'dyson', 'roborock', '*'] },
   { k: 'alim', ad: 'Alışveriş ve para', buton: ['alisveris', 'para', 'stok', 'takviye'], varsayilan: null },
   { k: 'kayit', ad: 'Not ve kayıt', buton: ['ses', 'elle', 'etkinlik'], varsayilan: null },
   { k: 'bolum', ad: 'Bölümler', buton: ['ev', 'sayacb', 'ozet'], varsayilan: null },
 ];
 const HAZIR_ANAHTAR = new Set(PANO_KATEGORI.flatMap((k) => (Array.isArray(k.sayac) ? k.sayac : [])));
 
-function favoriler() { try { return JSON.parse(M.db.ayarAl('pano_favori', '{}')) ?? {}; } catch { return {}; } }
+function favoriler() {
+  let f; try { f = JSON.parse(M.db.ayarAl('pano_favori', '{}')) ?? {}; } catch { f = {}; }
+  // Eski üç sayaç kategorisinin (mutfak, temizlik, diger) seçimleri tek listede birleşir.
+  if (!f.sayac && (f.mutfak || f.temizlik || f.diger)) {
+    const tanim = { mutfak: ['bulasik_calis', 'camasir', 'kurutucu', 'asma'], temizlik: ['cop', 'dyson', 'roborock'], diger: ['*'] };
+    f.sayac = ['mutfak', 'temizlik', 'diger'].flatMap((k) => f[k] ?? tanim[k]);
+  }
+  return f;
+}
 function favoriYaz(kat, liste) { M.db.ayarYaz('pano_favori', JSON.stringify({ ...favoriler(), [kat]: liste })); }
 
 export function PanoEkrani() {
@@ -73,12 +80,17 @@ export function PanoEkrani() {
   ].map((b) => ({ ...b, id: b.anahtar, tamAd: b.ad, zemin: saydam(b.renk, 18) }));
 
   const tumOgeler = (kat) => {
-    if (kat.sayac === 'diger') return digerSayaclar.map(sayacOgesi);
-    if (kat.sayac) return kat.sayac.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean).map(sayacOgesi);
+    if (kat.sayac) return [...kat.sayac.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean), ...(kat.digerleri ? digerSayaclar : [])].map(sayacOgesi);
     return kat.buton.map((a) => butonlar.find((b) => b.anahtar === a)).filter(Boolean);
   };
   const fav = favoriler();
-  const seciliIdler = (kat, ogeler) => fav[kat.k] ?? kat.varsayilan ?? ogeler.map((o) => o.id);
+  // '*' = listede adı geçmeyen diğer tüm öğeler (yeni eklenen sayaçlar da kendiliğinden görünür).
+  const seciliIdler = (kat, ogeler) => {
+    const l = fav[kat.k] ?? kat.varsayilan ?? ogeler.map((o) => o.id);
+    if (!l.includes('*')) return l;
+    const adli = new Set([...l, ...(kat.sayac ?? [])]);
+    return l.flatMap((id) => (id === '*' ? ogeler.filter((o) => !adli.has(o.id)).map((o) => o.id) : [id]));
+  };
 
   return html`<div class="icerik"><div class="sutun">
     <div class="satir">
@@ -111,7 +123,7 @@ export function PanoEkrani() {
         </div>
         ${gorunen.length === 0
           ? html`<button class="bk soluk" style="padding:4px 2px 2px;text-align:left" onClick=${() => setFavoriKat(kat.k)}>Favori yok. ⋯ ile seç.</button>`
-          : html`<div class="izgara5">${gorunen.map((o) => html`<${KucukKutu} key=${o.id} o=${o} />`)}</div>`}
+          : html`<div class=${kat.dar ? 'izgara6' : 'izgara5'}>${gorunen.map((o) => html`<${KucukKutu} key=${o.id} o=${o} dar=${kat.dar} />`)}</div>`}
       </section>`;
     })}
   </div>
@@ -130,10 +142,10 @@ export function PanoEkrani() {
 }
 
 /** Panodaki küçük kare kutu: simge, kısa ad, (varsa) kısa bilgi ve bugünkü sayı rozeti. Uzun basınca ayrıntı. */
-function KucukKutu({ o }) {
+function KucukKutu({ o, dar }) {
   const olay = o.onUzun ? uzunBas(o.onUzun, o.onClick) : { onClick: o.onClick };
-  return html`<button class="kkutu" aria-label=${o.onUzun ? o.tamAd + ' +1' : o.tamAd} ...${olay}>
-    <div class="daire" style=${{ width: '30px', height: '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${17} renk=${o.renk} /></div>
+  return html`<button class=${'kkutu' + (dar ? ' dar' : '')} aria-label=${o.onUzun ? o.tamAd + ' +1' : o.tamAd} ...${olay}>
+    <div class="daire" style=${{ width: dar ? '26px' : '30px', height: dar ? '26px' : '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${dar ? 15 : 17} renk=${o.renk} /></div>
     <span class="kkutu-ad">${o.ad}</span>
     ${o.bilgi && html`<span class="kkutu-bilgi">${o.bilgi}</span>`}
     ${o.rozet && html`<${MiniRozet} metin=${o.rozet} stil=${{ top: '2px', right: '2px' }} />`}
