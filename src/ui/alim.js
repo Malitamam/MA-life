@@ -6,7 +6,7 @@ import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi,
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
 import { KART_TUTARLARI, KucukKutu } from './pano.js';
-import { urunIkonu } from '../ikonlar.js';
+import { urunIkonu, urunEmoji } from '../ikonlar.js';
 import { Is } from './islem.js';
 
 const esitTr = (a, b) => a.trim().toLocaleLowerCase('tr-TR') === b.trim().toLocaleLowerCase('tr-TR');
@@ -58,7 +58,7 @@ export function AlisverisEkrani() {
       <div class="izgara6">
         ${hizli.map((ad) => {
           const var_ = listede.has(kucukTr(ad));
-          return html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad: hizliDuzen ? ad + ' ×' : ad, tamAd: ad, ikon: urunIkonu(ad), renk: RENK.mercan, zemin: 'color-mix(in srgb, var(--mercan) 18%, transparent)', secili: var_,
+          return html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad: hizliDuzen ? ad + ' ×' : ad, tamAd: ad, ikon: urunIkonu(ad), emoji: urunEmoji(ad), renk: RENK.mercan, zemin: 'color-mix(in srgb, var(--mercan) 18%, transparent)', secili: var_,
             onClick: () => { if (hizliDuzen) Ayar.hizliSecimler = hizli.filter((x) => x !== ad); else if (!var_) ekle(ad); } }} />`;
         })}
         <button class="kkutu dar" aria-label="Hızlı seçime ekle" onClick=${() => setHizliEkle(true)}><${Ikon} ad="arti" boy=${18} renk="var(--soluk)" /></button>
@@ -76,7 +76,8 @@ export function AlisverisEkrani() {
       ${liste.map((m) => {
         const eski = !m.alindi && simdi - m.eklenme > 7 * 86_400_000;
         return html`<div key=${m.id} class="satir" style="height:42px" ...${uzunBas(() => M.db.sil('alisveris', m.id), null)}>
-          <${Ikon} ad=${m.ikon && m.ikon !== 'paket' ? m.ikon : urunIkonu(m.ad)} boy=${16} renk=${RENK.mercan} />
+          ${urunIkonu(m.ad) !== 'paket' ? html`<span class="liste-emoji" aria-hidden="true">${urunEmoji(m.ad)}</span>`
+            : html`<${Ikon} ad=${m.ikon && m.ikon !== 'paket' ? m.ikon : 'paket'} boy=${16} renk=${RENK.mercan} />`}
           <span class=${'bm dolu tek' + (m.alindi ? ' soluk cizik' : '')} style="margin-left:9px">${m.ad}</span>
           ${eski && html`<span class="tm c-mercan" style="padding:0 6px">!</span>`}
           ${m.otomatik && !m.alindi && html`<span class="bk soluk">oto</span>`}

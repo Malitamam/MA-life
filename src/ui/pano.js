@@ -11,7 +11,7 @@ import { ZincirSatiri, ZincirKurDialog } from './zincir.js';
 import { turRengi } from './ajanda.js';
 import { useKayitta, sesToggle } from './ses.js';
 import { Is } from './islem.js';
-import { urunIkonu } from '../ikonlar.js';
+import { urunIkonu, urunEmoji } from '../ikonlar.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
@@ -87,7 +87,7 @@ export function PanoEkrani() {
   const hizliAdlar = Ayar.hizliSecimler;
   const listeOgeleri = hizliAdlar.map((ad) => {
     const m = listedeki(ad);
-    return { id: 'u:' + ad, ad, tamAd: ad, ikon: urunIkonu(ad), renk: RENK.mercan, zemin: saydam(RENK.mercan, 18), secili: !!m,
+    return { id: 'u:' + ad, ad, tamAd: ad, ikon: urunIkonu(ad), emoji: urunEmoji(ad), renk: RENK.mercan, zemin: saydam(RENK.mercan, 18), secili: !!m,
       etiket: m ? ad + ' listeden çıkar' : ad + ' listeye ekle',
       onClick: () => {
         const v = listedeki(ad);
@@ -166,7 +166,8 @@ export function PanoEkrani() {
 export function KucukKutu({ o, dar }) {
   const olay = o.onUzun ? uzunBas(o.onUzun, o.onClick) : { onClick: o.onClick };
   return html`<button class=${'kkutu' + (dar ? ' dar' : '') + (o.secili ? ' secili' : '')} aria-label=${o.etiket ?? (o.onUzun ? o.tamAd + ' +1' : o.tamAd)} aria-pressed=${o.secili == null ? undefined : !!o.secili} ...${olay}>
-    <div class="daire" style=${{ width: dar ? '26px' : '30px', height: dar ? '26px' : '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${dar ? 15 : 17} renk=${o.renk} /></div>
+    ${o.emoji ? html`<span class="kkutu-emoji" aria-hidden="true">${o.emoji}</span>`
+      : html`<div class="daire" style=${{ width: dar ? '26px' : '30px', height: dar ? '26px' : '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${dar ? 15 : 17} renk=${o.renk} /></div>`}
     <span class="kkutu-ad">${o.ad}</span>
     ${o.bilgi && html`<span class="kkutu-bilgi">${o.bilgi}</span>`}
     ${o.secili && html`<span class="kkutu-tik"><${Ikon} ad="tik" boy=${9} /></span>`}

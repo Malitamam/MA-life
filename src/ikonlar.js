@@ -124,3 +124,9 @@ export function urunIkonu(ad) {
   for (const [k, ik] of URUN_KELIME) if (!k.includes(' ') && kelimeler.some((w) => w === k || (k.length >= 4 && w.startsWith(k)))) return ik;
   return 'paket';
 }
+
+/** Renkli ürün simgesi (emoji): telefonda hemen tanınır. Bilinmeyen ürün → alışveriş arabası. */
+const URUN_EMOJI = { ekmek: '🍞', brokoli: '🥦', domates: '🍅', salatalik: '🥒', maydanoz: '🌿', sogan: '🧅', patates: '🥔', sut: '🥛',
+  peynir: '🧀', kahve: '☕', makarna: '🍝', tereyag: '🧈', icecek: '🥤', su: '💧', et: '🥩', tavuk: '🍗', balik: '🐟', yogurt: '🥣',
+  yag: '🫒', yemis: '🥜', musli: '🌾', pommes: '🍟', buz: '🧊', paket: '🛒' };
+export const urunEmoji = (ad) => URUN_EMOJI[urunIkonu(ad)] ?? '🛒';
