@@ -5,7 +5,8 @@ import { Ikon, Kart, Cip, Segment, YuvarlakButon, IkonButon, TikButon, MetinButo
 import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi, tutarMetni as tl } from '../mantik.js';
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
-import { KART_TUTARLARI } from './pano.js';
+import { KART_TUTARLARI, KucukKutu } from './pano.js';
+import { urunIkonu } from '../ikonlar.js';
 import { Is } from './islem.js';
 
 const esitTr = (a, b) => a.trim().toLocaleLowerCase('tr-TR') === b.trim().toLocaleLowerCase('tr-TR');
@@ -36,7 +37,7 @@ export function AlisverisEkrani() {
   const alinanlar = M.db.hepsi('alisveris').filter((m) => m.alindi);
   const ekle = (ad) => {
     const u = urunler.find((x) => esitTr(x.ad, ad));
-    depo.alisveriseEkle(buyukIlk(ad.trim()), u?.id ?? null, u?.ikon ?? 'paket', false, online === 1);
+    depo.alisveriseEkle(buyukIlk(ad.trim()), u?.id ?? null, u?.ikon && u.ikon !== 'paket' ? u.ikon : urunIkonu(ad), false, online === 1);
   };
   const listede = new Set(bekleyen.map((m) => kucukTr(m.ad)));
   const azalan = urunler.filter((u) => StokMantik.azMi(u) && !listede.has(kucukTr(u.ad)));
@@ -54,13 +55,13 @@ export function AlisverisEkrani() {
     <div>
       <div class="satir"><span class="lk soluk dolu">Hızlı seç</span><${MetinButon} onClick=${() => setHizliDuzen(!hizliDuzen)}>${hizliDuzen ? 'Bitti' : 'Düzenle'}</${MetinButon}></div>
       ${hizliDuzen && html`<div class="bk c-sari" style="margin-bottom:6px">Çıkarmak için dokun.</div>`}
-      <div class="sar">
+      <div class="izgara6">
         ${hizli.map((ad) => {
           const var_ = listede.has(kucukTr(ad));
-          return html`<button class="lk" style=${{ borderRadius: '14px', padding: '8px 12px', background: var_ ? RENK.mercan : 'var(--yuzey)', color: var_ ? 'var(--murekkep)' : 'var(--yazi)', fontSize: '12px' }}
-            onClick=${() => { if (hizliDuzen) Ayar.hizliSecimler = hizli.filter((x) => x !== ad); else if (!var_) ekle(ad); }}>${hizliDuzen ? `${ad} ×` : ad}</button>`;
+          return html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad: hizliDuzen ? ad + ' ×' : ad, tamAd: ad, ikon: urunIkonu(ad), renk: RENK.mercan, zemin: 'color-mix(in srgb, var(--mercan) 18%, transparent)', secili: var_,
+            onClick: () => { if (hizliDuzen) Ayar.hizliSecimler = hizli.filter((x) => x !== ad); else if (!var_) ekle(ad); } }} />`;
         })}
-        <button class="lk" style="border-radius:14px;padding:8px 14px;background:var(--yuzey);font-size:12px" aria-label="Hızlı seçime ekle" onClick=${() => setHizliEkle(true)}>+</button>
+        <button class="kkutu dar" aria-label="Hızlı seçime ekle" onClick=${() => setHizliEkle(true)}><${Ikon} ad="arti" boy=${18} renk="var(--soluk)" /></button>
       </div>
       ${azalan.length > 0 && html`<div class="lk soluk" style="margin:8px 0 6px">Stokta azalanlar</div>
         <div class="sar">${azalan.map((u) => html`<button class="satir" style="border-radius:12px;background:var(--yuzey);padding:6px 9px" onClick=${() => depo.alisveriseEkle(u.ad, u.id, u.ikon, false, online === 1)}>
@@ -75,7 +76,7 @@ export function AlisverisEkrani() {
       ${liste.map((m) => {
         const eski = !m.alindi && simdi - m.eklenme > 7 * 86_400_000;
         return html`<div key=${m.id} class="satir" style="height:42px" ...${uzunBas(() => M.db.sil('alisveris', m.id), null)}>
-          <${Ikon} ad=${m.ikon} boy=${16} renk=${RENK.mercan} />
+          <${Ikon} ad=${m.ikon && m.ikon !== 'paket' ? m.ikon : urunIkonu(m.ad)} boy=${16} renk=${RENK.mercan} />
           <span class=${'bm dolu tek' + (m.alindi ? ' soluk cizik' : '')} style="margin-left:9px">${m.ad}</span>
           ${eski && html`<span class="tm c-mercan" style="padding:0 6px">!</span>`}
           ${m.otomatik && !m.alindi && html`<span class="bk soluk">oto</span>`}

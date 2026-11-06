@@ -79,9 +79,48 @@ export const IKON = {
   havlu: v24(kutu(6, 3, 12, 15, 2), 'M6 8h12', 'M9 18v3', 'M15 18v3'),
   sirala: v24('M7 4v16', 'M3.5 16.5L7 20l3.5-3.5', 'M17 20V4', 'M13.5 7.5L17 4l3.5 3.5'),
   kaydet: v24('M5 3h11l3 3v15H5z', 'M8 3v5h7V3', 'M8 21v-6h8v6'),
+  // Alışveriş ürünleri (hızlı seç)
+  ekmek: v24('M6 11.5A4 4 0 0 1 7 3.5h10a4 4 0 0 1 1 8V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z', 'M10 9l-1.5 3', 'M14.5 9L13 12'),
+  brokoli: v24(daire(8, 9.5, 3.2), daire(16, 9.5, 3.2), daire(12, 6.5, 3.5), 'M10.5 13l.8 8h1.4l.8-8'),
+  domates: v24(daire(12, 14, 7), 'M8.5 7.8L12 9.5l3.5-1.7', 'M12 9.5V4.5'),
+  salatalik: v24('M5.6 18.4a3 3 0 0 1 0-4.2l8.6-8.6a3 3 0 0 1 4.2 4.2l-8.6 8.6a3 3 0 0 1-4.2 0z', 'M9.5 14.5h.01', 'M12 12h.01', 'M14.5 9.5h.01'),
+  maydanoz: v24('M12 21V11', 'M12 15l-4.5-4.5', 'M12 13l4.5-4.5', daire(6.5, 9.5, 2.2), daire(17.5, 7.5, 2.2), daire(12, 7, 2.4)),
+  sogan: v24('M12 4c-1 3-6.5 5-6.5 10a6.5 6.5 0 0 0 13 0c0-5-5.5-7-6.5-10z', 'M12 4V2.5', 'M12 9c-1.5 1.8-2.8 3.5-2.8 6', 'M10.5 21.5h3'),
+  patates: v24('M4.5 13.5C4.5 9 8 5 13 5c3.8 0 6.5 2.6 6.5 6 0 4.5-3 9-8.5 9-4 0-6.5-2.5-6.5-6.5z', 'M10 10.5h.01', 'M14.5 12.5h.01', 'M10.5 15.5h.01'),
+  sut: v24('M8.5 2.5h7', 'M8.5 2.5V5L6 9v12h12V9l-2.5-4V2.5', 'M6 9h12', 'M9.5 13h5'),
+  peynir: v24('M3 15L15.5 6.5 21 10v9H3z', 'M3 15h18', daire(9, 17.2, 0.9), daire(16, 12.2, 1.1)),
+  makarna: v24('M3 12h18a9 8 0 0 1-18 0z', 'M8 12c0-3 2-3.5 2-6.5', 'M12 12c0-3 2-3.5 2-6.5', 'M16 12c0-2.5 1.5-3.5 1.5-6'),
+  tereyag: v24('M3 12l3-4h15l-3 4z', 'M3 12h15v7H3z', 'M18 12l3-4v7l-3 4'),
+  icecek: v24('M7 8h10l-1.5 13h-7z', 'M12 8l2-5h3', 'M7.5 12.5h9'),
+  et: v24('M4 12c0-4.5 4-8 9-8 4.2 0 7 2.6 7 6 0 2.6-2 4-4.8 5.1-2.6 1-3.6 4.9-7.2 4.9C5.6 20 4 16.6 4 12z', daire(10, 11, 1.8)),
+  tavuk: v24('M10.5 13.5c-2-2-2.5-6.2.3-8.8 2.8-2.6 7.6-2.4 9.2.2 1.6 2.6.6 6.8-1.8 8.4-2.4 1.6-5.7 2.2-7.7.2z', 'M10.5 13.5L6 18', daire(5, 19.5, 1.5), daire(3.8, 17.6, 1.2)),
+  balik: v24('M3 12c3-5 9.5-6 13.5-2.8L21 6v12l-4.5-3.2C12.5 18 6 17 3 12z', daire(8, 11, 0.6)),
+  yogurt: v24('M5.5 9h13l-1.4 11a1 1 0 0 1-1 1H7.9a1 1 0 0 1-1-1z', 'M4.5 9h15', kutu(6, 5, 12, 4, 1)),
+  yag: v24('M10 2.5h4', 'M10.5 2.5V6L8 9.5V20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V9.5L13.5 6V2.5', 'M12 12s-1.6 2-1.6 3.2a1.6 1.6 0 0 0 3.2 0C13.6 14 12 12 12 12z'),
+  yemis: v24('M5 10a7 5 0 0 1 14 0z', 'M6.2 10c0 5.5 2.8 9.5 5.8 11 3-1.5 5.8-5.5 5.8-11', 'M12 5V2.5'),
+  musli: v24('M3 11h18a9 8 0 0 1-18 0z', 'M8 8h.01', 'M12 7h.01', 'M16 8h.01', 'M10 4.5h.01', 'M14 4.5h.01'),
+  pommes: v24('M5 10h14l-2 11H7z', 'M8 10V4', 'M11 10V3', 'M14 10V4', 'M16.5 10l1-5', 'M6.8 10L6 5.5'),
+  buz: v24('M12 3l8 4.5v9L12 21l-8-4.5v-9z', 'M4 7.5l8 4.5 8-4.5', 'M12 12v9'),
 };
 
 /** Veritabanındaki ikon adından ikon adı (bilinmeyen → paket). */
 const ESLE = { kapsul: 'hap', damla: 'su' };
 export const ikonAdi = (ad) => (IKON[ESLE[ad] ?? ad] ? ESLE[ad] ?? ad : 'paket');
 export const SECILEBILIR = ['gunes', 'dis', 'kosu', 'su', 'kitap', 'kalp', 'hap', 'temizlik', 'ates', 'kahve', 'paket', 'zincir'];
+
+/** Ürün adından alışveriş simgesi (ad içinde geçen kelimeye bakar; bilinmeyen → paket). */
+const URUN_KELIME = [
+  ['ekmek', 'ekmek'], ['brokoli', 'brokoli'], ['domates', 'domates'], ['salatalık', 'salatalik'], ['maydanoz', 'maydanoz'],
+  ['soğan', 'sogan'], ['patates', 'patates'], ['süt', 'sut'], ['peynir', 'peynir'], ['kahve', 'kahve'], ['makarna', 'makarna'],
+  ['tereyağ', 'tereyag'], ['içecek', 'icecek'], ['kola', 'icecek'], ['meyve suyu', 'icecek'], ['su', 'su'], ['kırmızı et', 'et'], ['kıyma', 'et'], ['et', 'et'],
+  ['tavuk', 'tavuk'], ['balık', 'balik'], ['yoğurt', 'yogurt'], ['yağ', 'yag'], ['yemiş', 'yemis'], ['fındık', 'yemis'], ['ceviz', 'yemis'], ['badem', 'yemis'],
+  ['müsli', 'musli'], ['pommes', 'pommes'], ['patates kızartma', 'pommes'], ['buz', 'buz'],
+];
+export function urunIkonu(ad) {
+  const s = String(ad ?? '').toLocaleLowerCase('tr-TR').trim();
+  const kelimeler = s.split(/\s+/);
+  for (const [k, ik] of URUN_KELIME) if (k.includes(' ') && s.includes(k)) return ik;
+  // Kısa kelimeler (su, et, yağ, süt, buz) tam eşleşmeli: "sucuk" su değildir.
+  for (const [k, ik] of URUN_KELIME) if (!k.includes(' ') && kelimeler.some((w) => w === k || (k.length >= 4 && w.startsWith(k)))) return ik;
+  return 'paket';
+}

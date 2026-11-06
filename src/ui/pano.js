@@ -1,6 +1,6 @@
 // Pano: üst şerit, Bugün/Hafta, zincirler, sayaç kısa yolları, bölüm butonları, düzen modu (PanoEkrani.kt).
 import { html, useState } from '../../vendor/preact-htm.js';
-import { M, Ayar, useVeri, useBugun, git, koyuMu } from './durum.js';
+import { M, Ayar, useVeri, useBugun, git, koyuMu, sonIslem } from './durum.js';
 import { Ikon, Kart, Cip, Segment, YuvarlakButon, TikButon, MetinButon, Dialog, Girdi, SesleYaz, MiniRozet, Anahtar, uzunBas, vurgu, saydam, RENK } from './ortak.js';
 import { AjandaMantik, GunlukMantik, PanoMantik, PanoDuzen, SayacMantik, StokMantik, tutarMetni } from '../mantik.js';
 import { ayBasi, isoHafta, gunUzun, gunBaslik, saatMetni, saatYazi, gunAyHg } from '../tarih.js';
@@ -11,6 +11,7 @@ import { ZincirSatiri, ZincirKurDialog } from './zincir.js';
 import { turRengi } from './ajanda.js';
 import { useKayitta, sesToggle } from './ses.js';
 import { Is } from './islem.js';
+import { urunIkonu } from '../ikonlar.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
@@ -24,6 +25,7 @@ const kisaAd = (ad) => KISA[ad] ?? ad;
 export const PANO_KATEGORI = [
   { k: 'sayac', ad: 'Hızlı sayaçlar', sayac: ['bulasik_calis', 'bulasik_bosalt', 'camasir', 'kurutucu', 'asma', 'cop', 'dyson', 'roborock'], digerleri: true, dar: true,
     varsayilan: ['bulasik_calis', 'camasir', 'kurutucu', 'asma', 'cop', 'dyson', 'roborock', '*'] },
+  { k: 'liste', ad: 'Alışveriş listesi', liste: true, dar: true, varsayilan: null },
   { k: 'alim', ad: 'Alışveriş ve para', buton: ['alisveris', 'para', 'stok', 'takviye'], varsayilan: null },
   { k: 'kayit', ad: 'Not ve kayıt', buton: ['ses', 'elle', 'etkinlik'], varsayilan: null },
   { k: 'bolum', ad: 'Bölümler', buton: ['ev', 'sayacb', 'ozet'], varsayilan: null },
@@ -79,8 +81,26 @@ export function PanoEkrani() {
     { anahtar: 'ses', ad: kayit.kayitta ? 'Durdur' : 'Sesli not', ikon: kayit.kayitta ? 'durdur' : 'mikrofon', renk: RENK.mercan, bilgi: kayit.kayitta ? 'kayıtta' : 'bas, konuş', onClick: sesToggle },
   ].map((b) => ({ ...b, id: b.anahtar, tamAd: b.ad, zemin: saydam(b.renk, 18) }));
 
+  // Alışveriş listesi simgeleri: hızlı seç ürünleri; listede olan vurgulu (dokun: ekle / çıkar).
+  const acikListe = depo.acikAlisveris().filter((m) => !m.alindi);
+  const listedeki = (ad) => acikListe.find((m) => m.ad.toLocaleLowerCase('tr-TR') === ad.toLocaleLowerCase('tr-TR'));
+  const hizliAdlar = Ayar.hizliSecimler;
+  const listeOgeleri = hizliAdlar.map((ad) => {
+    const m = listedeki(ad);
+    return { id: 'u:' + ad, ad, tamAd: ad, ikon: urunIkonu(ad), renk: RENK.mercan, zemin: saydam(RENK.mercan, 18), secili: !!m,
+      etiket: m ? ad + ' listeden çıkar' : ad + ' listeye ekle',
+      onClick: () => {
+        const v = listedeki(ad);
+        if (v) { M.db.sil('alisveris', v.id); sonIslem(ad + ' listeden çıkarıldı', 0); }
+        else { const u = depo.urunler().find((x) => x.ad.toLocaleLowerCase('tr-TR') === ad.toLocaleLowerCase('tr-TR'));
+          depo.alisveriseEkle(ad, u?.id ?? null, u?.ikon && u.ikon !== 'paket' ? u.ikon : urunIkonu(ad), false, false); sonIslem(ad + ' listeye eklendi', 0); }
+      } };
+  });
+  const listeDisi = acikListe.filter((m) => !hizliAdlar.some((ad) => ad.toLocaleLowerCase('tr-TR') === m.ad.toLocaleLowerCase('tr-TR')));
+
   const tumOgeler = (kat) => {
     if (kat.sayac) return [...kat.sayac.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean), ...(kat.digerleri ? digerSayaclar : [])].map(sayacOgesi);
+    if (kat.liste) return listeOgeleri;
     return kat.buton.map((a) => butonlar.find((b) => b.anahtar === a)).filter(Boolean);
   };
   const fav = favoriler();
@@ -118,12 +138,13 @@ export function PanoEkrani() {
       const gorunen = secili.map((id) => ogeler.find((o) => o.id === id)).filter(Boolean);
       return html`<section key=${kat.k} class="pano-kat" aria-label=${kat.ad}>
         <div class="satir pano-kat-bas">
-          <span class="lk soluk dolu">${kat.ad}</span>
+          <span class="lk soluk dolu">${kat.ad}${kat.liste ? ` · ${acikListe.length} ürün` : ''}</span>
           <button class="ucnokta" aria-label=${kat.ad + ': favorileri seç'} onClick=${() => setFavoriKat(kat.k)}>⋯</button>
         </div>
         ${gorunen.length === 0
           ? html`<button class="bk soluk" style="padding:4px 2px 2px;text-align:left" onClick=${() => setFavoriKat(kat.k)}>Favori yok. ⋯ ile seç.</button>`
           : html`<div class=${kat.dar ? 'izgara6' : 'izgara5'}>${gorunen.map((o) => html`<${KucukKutu} key=${o.id} o=${o} dar=${kat.dar} />`)}</div>`}
+        ${kat.liste && listeDisi.length > 0 && html`<button class="bk soluk" style="text-align:left;padding:2px" onClick=${() => git('alim')}>Listede ayrıca: ${listeDisi.map((m) => m.ad).join(', ')}</button>`}
       </section>`;
     })}
   </div>
@@ -142,12 +163,13 @@ export function PanoEkrani() {
 }
 
 /** Panodaki küçük kare kutu: simge, kısa ad, (varsa) kısa bilgi ve bugünkü sayı rozeti. Uzun basınca ayrıntı. */
-function KucukKutu({ o, dar }) {
+export function KucukKutu({ o, dar }) {
   const olay = o.onUzun ? uzunBas(o.onUzun, o.onClick) : { onClick: o.onClick };
-  return html`<button class=${'kkutu' + (dar ? ' dar' : '')} aria-label=${o.onUzun ? o.tamAd + ' +1' : o.tamAd} ...${olay}>
+  return html`<button class=${'kkutu' + (dar ? ' dar' : '') + (o.secili ? ' secili' : '')} aria-label=${o.etiket ?? (o.onUzun ? o.tamAd + ' +1' : o.tamAd)} aria-pressed=${o.secili == null ? undefined : !!o.secili} ...${olay}>
     <div class="daire" style=${{ width: dar ? '26px' : '30px', height: dar ? '26px' : '30px', background: o.zemin }}><${Ikon} ad=${o.ikon} boy=${dar ? 15 : 17} renk=${o.renk} /></div>
     <span class="kkutu-ad">${o.ad}</span>
     ${o.bilgi && html`<span class="kkutu-bilgi">${o.bilgi}</span>`}
+    ${o.secili && html`<span class="kkutu-tik"><${Ikon} ad="tik" boy=${9} /></span>`}
     ${o.rozet && html`<${MiniRozet} metin=${o.rozet} stil=${{ top: '2px', right: '2px' }} />`}
   </button>`;
 }
