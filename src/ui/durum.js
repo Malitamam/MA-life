@@ -80,11 +80,11 @@ export function git(rota) {
   // sekmeler arasında geçmiş birikmesin: Pano'nun üstünde tek sekme durur, geri tuşu Pano'ya döner
   if (sekmeye && sekmede) {
     if (rota === 'pano' && history.state?.ustPano) { history.back(); return; }
-    history.replaceState({ ustPano: history.state?.ustPano ?? false }, '', '#/' + rota);
-  } else history.pushState({ ustPano: simdi === 'pano' && sekmeye }, '', '#/' + rota);
+    try { history.replaceState({ ustPano: history.state?.ustPano ?? false }, '', '#/' + rota); } catch { location.hash = '#/' + rota; return; }
+  } else try { history.pushState({ ustPano: simdi === 'pano' && sekmeye }, '', '#/' + rota); } catch { location.hash = '#/' + rota; return; }
   haber();
 }
-export function geri() { if (history.state && history.length > 1) history.back(); else { history.replaceState(null, '', '#/pano'); haber(); } }
+export function geri() { if (history.state && history.length > 1) history.back(); else { try { history.replaceState(null, '', '#/pano'); } catch { location.hash = '#/pano'; return; } haber(); } }
 export function useRota() {
   const [r, setR] = useState(rotaAl());
   useEffect(() => { const f = () => setR(rotaAl()); addEventListener('hashchange', f); addEventListener('popstate', f); addEventListener('rota', f); return () => { removeEventListener('hashchange', f); removeEventListener('popstate', f); removeEventListener('rota', f); }; }, []);
