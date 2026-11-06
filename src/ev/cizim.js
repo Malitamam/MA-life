@@ -1,21 +1,37 @@
 // Ev modu çizimi: Canvas 2D ile sıcak, düşük poligonlu izometrik ev (motor yok, görsel paket yok).
 import { ODALAR, DIS, ESYALAR, ALANLAR, KAPILAR, DUVAR_Y, DIS_KAPI } from './plan.js';
 
-/** Kamera: dünya (x, y, z) → ekran. */
+/** Kamera: dünya (x, y, z) → ekran. don: 0-3, görünümün 90° adımlarla dönüşü. */
+const GEN = 18, DER = 23.5;
 export class Kamera {
-  constructor() { this.zum = 1; this.mx = 9; this.my = 9; this.W = 360; this.H = 640; this.oy = 0.5; }
+  constructor() { this.zum = 1; this.mx = 9; this.my = 9; this.W = 360; this.H = 640; this.oy = 0.5; this.don = 0; }
   get tw() { return 46 * this.zum; } // karo genişliği (px / birim)
   get th() { return 23 * this.zum; }
   get tz() { return 30 * this.zum; }
-  ekran(x, y, z = 0) {
-    const a = (x - y) - (this.mx - this.my), b = (x + y) - (this.mx + this.my);
+  r(x, y) { switch (this.don) { case 1: return [DER - y, x]; case 2: return [GEN - x, DER - y]; case 3: return [y, GEN - x]; default: return [x, y]; } }
+  ri(u, v) { switch (this.don) { case 1: return [v, DER - u]; case 2: return [GEN - u, DER - v]; case 3: return [GEN - v, u]; default: return [u, v]; } }
+  rn(nx, ny) { switch (this.don) { case 1: return [-ny, nx]; case 2: return [-nx, -ny]; case 3: return [ny, -nx]; default: return [nx, ny]; } }
+  /** Yüz normali (nx, ny) bu açıdan görünüyor mu? */
+  yuz(nx, ny) { const [a, b] = this.rn(nx, ny); return a > 0 || b > 0; }
+  derin(x, y) { const [u, v] = this.r(x, y); return u + v; }
+  ham(u, v, z = 0) {
+    const [cu, cv] = this.r(this.mx, this.my);
+    const a = (u - v) - (cu - cv), b = (u + v) - (cu + cv);
     return [this.W / 2 + a * this.tw / 2, this.H * this.oy + b * this.th / 2 - z * this.tz];
   }
+  ekran(x, y, z = 0) { const [u, v] = this.r(x, y); return this.ham(u, v, z); }
   dunya(sx, sy) {
-    const a = (sx - this.W / 2) / (this.tw / 2) + (this.mx - this.my);
-    const b = (sy - this.H * this.oy) / (this.th / 2) + (this.mx + this.my);
-    return [(a + b) / 2, (b - a) / 2];
+    const [cu, cv] = this.r(this.mx, this.my);
+    const a = (sx - this.W / 2) / (this.tw / 2) + (cu - cv);
+    const b = (sy - this.H * this.oy) / (this.th / 2) + (cu + cv);
+    return this.ri((a + b) / 2, (b - a) / 2);
   }
+}
+
+/** Dünya dikdörtgenini döndürülmüş uzayda eksene hizalı dikdörtgene çevirir. */
+function donRect(k, x, y, g, d) {
+  const [u0, v0] = k.r(x, y), [u1, v1] = k.r(x + g, y + d);
+  return [Math.min(u0, u1), Math.min(v0, v1), Math.abs(u1 - u0), Math.abs(v1 - v0)];
 }
 
 const hex = (c) => { if (c[0] !== '#') { const m = c.match(/[\d.]+/g) ?? [0, 0, 0]; return m.slice(0, 3).map(Number); } const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
@@ -26,6 +42,7 @@ export function ton(c, k) {
 }
 
 function poli(ctx, pts, dolgu, cizgi) {
+  if (pts.some((p) => Number.isNaN(p[0]))) return;
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
   ctx.closePath();
@@ -34,8 +51,9 @@ function poli(ctx, pts, dolgu, cizgi) {
 }
 
 /** Kutu: üst + görünen iki yan yüz. Hafif "low-poly" için üst yüzde ince bir köşegen ton farkı. */
-export function kutu(ctx, k, x, y, g, d, z, h, renk, ops = {}) {
-  const P = (a, b, c) => k.ekran(a, b, c);
+export function kutu(ctx, k, x0, y0, g0, d0, z, h, renk, ops = {}) {
+  const [x, y, g, d] = donRect(k, x0, y0, g0, d0);
+  const P = (a, b, c) => k.ham(a, b, c);
   const z1 = z + h;
   const ust = [P(x, y, z1), P(x + g, y, z1), P(x + g, y + d, z1), P(x, y + d, z1)];
   const onY = [P(x, y + d, z1), P(x + g, y + d, z1), P(x + g, y + d, z), P(x, y + d, z)];
@@ -48,8 +66,9 @@ export function kutu(ctx, k, x, y, g, d, z, h, renk, ops = {}) {
 }
 
 // Yüz üstünde (u, v ∈ 0..1) nokta: X yüzü (x = x+g; u: y yönü, v: z yönü), Y yüzü (y = y+d; u: x yönü)
-const yuzX = (k, e, u, v, z0 = e.z ?? 0) => k.ekran(e.x + e.g, e.y + e.d * u, z0 + e.h * v);
-const yuzY = (k, e, u, v, z0 = e.z ?? 0) => k.ekran(e.x + e.g * u, e.y + e.d, z0 + e.h * v);
+const YOK = [NaN, NaN];
+const yuzX = (k, e, u, v, z0 = e.z ?? 0) => k.yuz(1, 0) ? k.ekran(e.x + e.g, e.y + e.d * u, z0 + e.h * v) : YOK;
+const yuzY = (k, e, u, v, z0 = e.z ?? 0) => k.yuz(0, 1) ? k.ekran(e.x + e.g * u, e.y + e.d, z0 + e.h * v) : YOK;
 function daire(ctx, [x, y], r, dolgu, cizgi) { ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.9, 0, 0, Math.PI * 2); if (dolgu) { ctx.fillStyle = dolgu; ctx.fill(); } if (cizgi) { ctx.strokeStyle = cizgi; ctx.lineWidth = 1.5; ctx.stroke(); } }
 
 /** Eşya çizimi (türüne göre birkaç kutu + detay). */
@@ -84,7 +103,7 @@ export function esyaCiz(ctx, k, e, durum = {}) {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z + e.h - 0.06, 0.06, R);
       if (e.id === 'ofismasa') {
         kutu(ctx, k, e.x + 0.35, e.y + 0.4, 0.06, 1.3, z + e.h, 0.45, '#1A1C22');
-        poli(ctx, [k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.06), k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.06)], durum.gece ? '#9EC7FF' : '#6E8FC9');
+        if (k.yuz(1, 0)) poli(ctx, [k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.42), k.ekran(e.x + 0.41, e.y + 1.63, e.h + 0.06), k.ekran(e.x + 0.41, e.y + 0.47, e.h + 0.06)], durum.gece ? '#9EC7FF' : '#6E8FC9');
       }
       if (e.id === 'yemekmasa') for (let i = 0; i < 3; i++) for (const sx of [-0.5, e.g + 0.05]) kutu(ctx, k, e.x + sx, e.y + 0.2 + i * 0.75, 0.45, 0.45, 0, 0.45, '#EFEDE8');
       if (e.id === 'bmasa') for (const [sx, sy] of [[-0.5, 0.2], [-0.5, 0.85], [e.g + 0.05, 0.2], [e.g + 0.05, 0.85]]) kutu(ctx, k, e.x + sx, e.y + sy, 0.45, 0.45, 0, 0.45, '#2A2C30');
@@ -133,7 +152,7 @@ export function esyaCiz(ctx, k, e, durum = {}) {
     case 'tv': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h, R);
       kutu(ctx, k, e.x + e.g - 0.3, e.y + 0.2, 0.08, e.d - 0.4, e.h, 1.0, '#141518');
-      poli(ctx, [k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.07), k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.07)], '#23262E');
+      if (k.yuz(1, 0)) poli(ctx, [k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.95), k.ekran(e.x + e.g - 0.22, e.y + e.d - 0.27, e.h + 0.07), k.ekran(e.x + e.g - 0.22, e.y + 0.27, e.h + 0.07)], '#23262E');
       kutu(ctx, k, e.x + 0.1, e.y + 0.1, 0.3, 0.3, e.h, 0.35, '#4E8B4E');
       break;
     }
@@ -217,7 +236,7 @@ export function esyaCiz(ctx, k, e, durum = {}) {
       ctx.fillStyle = '#CBD6DB'; ctx.beginPath(); ctx.ellipse(px, py, 7 * k.zum, 3.6 * k.zum, 0, 0, 7); ctx.fill();
       // ayna (duvarda)
       const ax = e.x < 10 ? e.x : e.x + e.g;
-      poli(ctx, [k.ekran(ax, e.y + 0.1, 1.2), k.ekran(ax, e.y + e.d - 0.1, 1.2), k.ekran(ax, e.y + e.d - 0.1, 1.85), k.ekran(ax, e.y + 0.1, 1.85)], 'rgba(198,222,236,0.92)', '#A9B6BD');
+      if (k.yuz(e.x < 10 ? 1 : -1, 0)) poli(ctx, [k.ekran(ax, e.y + 0.1, 1.2), k.ekran(ax, e.y + e.d - 0.1, 1.2), k.ekran(ax, e.y + e.d - 0.1, 1.85), k.ekran(ax, e.y + 0.1, 1.85)], 'rgba(198,222,236,0.92)', '#A9B6BD');
       break;
     }
     case 'kuvet': {
@@ -235,7 +254,7 @@ export function esyaCiz(ctx, k, e, durum = {}) {
     case 'pano': {
       kutu(ctx, k, e.x, e.y, e.g, e.d, z, e.h, '#C99A5B');
       const kag = ['#FFE699', '#F3F1EE', '#FFC9B9', '#CDE8D3'];
-      for (let i = 0; i < 4; i++) poli(ctx, [k.ekran(e.x - 0.001, e.y + 0.1 + (i % 2) * 0.62, z + 0.12 + ((i / 2) | 0) * 0.45), k.ekran(e.x - 0.001, e.y + 0.62 + (i % 2) * 0.62, z + 0.12 + ((i / 2) | 0) * 0.45), k.ekran(e.x - 0.001, e.y + 0.62 + (i % 2) * 0.62, z + 0.5 + ((i / 2) | 0) * 0.45), k.ekran(e.x - 0.001, e.y + 0.1 + (i % 2) * 0.62, z + 0.5 + ((i / 2) | 0) * 0.45)], kag[i]);
+      if (k.yuz(1, 0)) for (let i = 0; i < 4; i++) poli(ctx, [k.ekran(e.x + e.g + 0.001, e.y + 0.1 + (i % 2) * 0.62, z + 0.12 + ((i / 2) | 0) * 0.45), k.ekran(e.x + e.g + 0.001, e.y + 0.62 + (i % 2) * 0.62, z + 0.12 + ((i / 2) | 0) * 0.45), k.ekran(e.x + e.g + 0.001, e.y + 0.62 + (i % 2) * 0.62, z + 0.5 + ((i / 2) | 0) * 0.45), k.ekran(e.x + e.g + 0.001, e.y + 0.1 + (i % 2) * 0.62, z + 0.5 + ((i / 2) | 0) * 0.45)], kag[i]);
       break;
     }
     case 'kulube': {
@@ -297,8 +316,8 @@ export function esyaCiz(ctx, k, e, durum = {}) {
       for (const [u, v] of [[0.18, 0], [0.78, 0], [0.18, 1], [0.78, 1]]) { const [wx, wy] = k.ekran(e.x + e.g * u, e.y + e.d * v, 0.18); ctx.fillStyle = '#1C1D20'; ctx.beginPath(); ctx.ellipse(wx, wy, 6 * k.zum, 6 * k.zum, 0, 0, 7); ctx.fill(); }
       kutu(ctx, k, e.x, e.y, e.g, e.d, 0.15, yk, R);
       kutu(ctx, k, e.x + e.g * 0.25, e.y + 0.08, e.g * 0.5, e.d - 0.16, 0.15 + yk, e.h - yk - 0.15, ton(R, 0.95));
-      poli(ctx, [k.ekran(e.x + e.g * 0.27, e.y + e.d - 0.08, 0.2 + yk), k.ekran(e.x + e.g * 0.73, e.y + e.d - 0.08, 0.2 + yk), k.ekran(e.x + e.g * 0.73, e.y + e.d - 0.08, e.h - 0.05), k.ekran(e.x + e.g * 0.27, e.y + e.d - 0.08, e.h - 0.05)], '#2D3A48');
-      poli(ctx, [k.ekran(e.x + e.g * 0.75, e.y + 0.12, 0.2 + yk), k.ekran(e.x + e.g * 0.75, e.y + e.d - 0.12, 0.2 + yk), k.ekran(e.x + e.g * 0.75, e.y + e.d - 0.12, e.h - 0.05), k.ekran(e.x + e.g * 0.75, e.y + 0.12, e.h - 0.05)], '#33465A');
+      if (k.yuz(0, 1)) poli(ctx, [k.ekran(e.x + e.g * 0.27, e.y + e.d - 0.08, 0.2 + yk), k.ekran(e.x + e.g * 0.73, e.y + e.d - 0.08, 0.2 + yk), k.ekran(e.x + e.g * 0.73, e.y + e.d - 0.08, e.h - 0.05), k.ekran(e.x + e.g * 0.27, e.y + e.d - 0.08, e.h - 0.05)], '#2D3A48');
+      if (k.yuz(1, 0)) poli(ctx, [k.ekran(e.x + e.g * 0.75, e.y + 0.12, 0.2 + yk), k.ekran(e.x + e.g * 0.75, e.y + e.d - 0.12, 0.2 + yk), k.ekran(e.x + e.g * 0.75, e.y + e.d - 0.12, e.h - 0.05), k.ekran(e.x + e.g * 0.75, e.y + 0.12, e.h - 0.05)], '#33465A');
       if (e.id === 'araba' && (durum.pfandAraba ?? 0) > 0) { // bagajda Pfand
         kutu(ctx, k, e.x + 0.05, e.y + 0.25, 0.45, 1.0, 0.15 + yk, 0.25, '#3E7D5A');
       }
@@ -321,12 +340,14 @@ export function esyaCiz(ctx, k, e, durum = {}) {
   }
 }
 
-function cati(ctx, k, x, y, g, d, z, h, renk, kenar) {
-  const t1 = k.ekran(x + g / 2, y, z + h), t2 = k.ekran(x + g / 2, y + d, z + h);
-  const a = k.ekran(x, y, z), b = k.ekran(x + g, y, z), c = k.ekran(x + g, y + d, z), dd = k.ekran(x, y + d, z);
-  poli(ctx, [t1, t2, c, b], ton(renk, 0.9), kenar ?? ton(renk, 0.6));
-  poli(ctx, [dd, c, t2], ton(renk, 0.75), kenar ?? ton(renk, 0.6));
-  poli(ctx, [a, dd, t2, t1], ton(renk, 1.05), kenar ?? ton(renk, 0.6));
+function cati(ctx, k, x0, y0, g0, d0, z, h, renk, kenar) {
+  const [x, y, g, d] = donRect(k, x0, y0, g0, d0);
+  const P = (a, b, c) => k.ham(a, b, c), kk = kenar ?? ton(renk, 0.6);
+  const t1 = P(x + g / 2, y, z + h), t2 = P(x + g / 2, y + d, z + h);
+  const a = P(x, y, z), b = P(x + g, y, z), c = P(x + g, y + d, z), dd = P(x, y + d, z);
+  poli(ctx, [a, dd, t2, t1], ton(renk, 1.05), kk);
+  poli(ctx, [t1, t2, c, b], ton(renk, 0.9), kk);
+  poli(ctx, [dd, c, t2], ton(renk, 0.75), kk);
 }
 
 /** Zemin: odalar, bahçe çimi, otopark, yol. */
@@ -346,8 +367,7 @@ export function zeminCiz(ctx, k, durum) {
   // ev zemini
   for (const o of ODALAR) for (const [x, y, g, d] of o.r) poli(ctx, dort(x, y, g, d), o.zemin, ton(o.zemin, 0.85));
   // ev tabanı (dış duvarın altı)
-  poli(ctx, [k.ekran(0, 12.5), k.ekran(10, 12.5), k.ekran(10, 12.5, -0.15), k.ekran(0, 12.5, -0.15)], '#9C8B78');
-  poli(ctx, [k.ekran(10, 12.5), k.ekran(18, 12.5), k.ekran(18, 12.5, -0.15), k.ekran(10, 12.5, -0.15)], '#9C8B78');
+
 }
 
 /** Duvar parçaları (kesik, alçak) — sıralamaya girecek kutular olarak döner. */

@@ -8,6 +8,7 @@ import { durumMetni, durumRengi, TutarDialog } from './takip.js';
 import { useSayacGirisi } from './sayac.js';
 import { Is } from './islem.js';
 import { ODALAR, DIS, ESYALAR, ALANLAR, ODA_AD, bolge, izgaraKur, yolBul, eylemNoktasi } from '../ev/plan.js';
+import { GozKamera, sahneKur, gozCiz, noktaIcinde, haritaCiz, GOZ } from '../ev/goz.js';
 import { Kamera, zeminCiz, esyaCiz, duvarKutulari, duvarCiz, citKutulari, kutu, alanCiz, alanYazisi, hap, isaretCiz, karakterCiz, ucanYaziCiz } from '../ev/cizim.js';
 
 // ---------------------------------------------------------------- veri bağlantısı
@@ -89,14 +90,14 @@ const TEBRIK = ['Harika!', 'Süper, bir iş daha', 'Ev sana teşekkür ediyor', 
 export function EvEkrani() {
   const depo = useVeri();
   const bugun = useBugun();
-  const [mod, setMod] = useState(() => { try { return Number(localStorage.getItem('mali_ev_mod') ?? 0); } catch { return 0; } });
+  const [mod, setMod] = useState(() => { try { return Number(localStorage.getItem('mali_ev_gorunum') ?? 0) % 3; } catch { return 0; } });
   const [acik, setAcik] = useState(null); // { e } | { oda }
   const [dis, setDis] = useState(null);
   const [tutarIcin, setTutarIcin] = useState(null);
   const [sayacGiris, sayacPenceresi] = useSayacGirisi();
   const oyun = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem('mali_ev_mod', String(mod)); } catch {} }, [mod]);
+  useEffect(() => { try { localStorage.setItem('mali_ev_gorunum', String(mod)); } catch {} }, [mod]);
   const isler = depo.isDurumlari(bugun);
   const pf = pfandAl();
   const vakit = eylemVakti(isler, bugun);
@@ -127,11 +128,13 @@ export function EvEkrani() {
         <div class="tm">Evim</div>
         <div class="bk soluk tek">${vakit.length ? `${vakit.length} yerde vakti gelen iş var` : 'Ev bugün rahat'}${pf.kulube + pf.elde + pf.araba > 0 ? ` · Pfand ${pf.kulube + pf.elde + pf.araba}` : ''}</div>
       </div>
-      <${Segment} secenekler=${['3D', 'Kroki']} secili=${mod} onSec=${setMod} />
+      <${Segment} secenekler=${['3D', 'Göz', 'Kroki']} secili=${mod} onSec=${setMod} />
     </div>
     <div class="ev-sahne">
       ${mod === 0
         ? html`<${Gezinti} ref_=${oyun} durum=${durum} sayfaAcik=${!!(acik || dis)} onEylem=${eylemAc} onAlan=${alanaGirdi} />`
+        : mod === 1
+        ? html`<${GozGezinti} ref_=${oyun} durum=${durum} onAlan=${alanaGirdi} />`
         : html`<${Kroki} durum=${durum} isler=${isler} bugun=${bugun} onEylem=${eylemAc} onOda=${(oda) => setAcik({ oda })} />`}
     </div>
     ${acik && html`<${Sayfa} key=${acik.e ?? acik.oda} acik=${acik} isler=${isler} bugun=${bugun} pf=${pf}
@@ -331,6 +334,8 @@ function DisariSayfasi({ ulasim, bugun, pf, onKapat, kutla, tutarIste, setUlasim
 // ---------------------------------------------------------------- 2.5D gezinti
 
 const KONUM = 'mali_ev_konum';
+const donAl = () => { try { return Number(localStorage.getItem('mali_ev_don') ?? 0) % 4; } catch { return 0; } };
+const donKaydet = (d) => { try { localStorage.setItem('mali_ev_don', String(d)); } catch {} };
 function konumAl() { try { const k = JSON.parse(localStorage.getItem(KONUM)); if (Array.isArray(k) && bolge(k[0], k[1])) return k; } catch {} return [9.5, 2.2]; }
 
 function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
@@ -346,7 +351,7 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
   if (!s.current) {
     const [x, y] = konumAl();
     var ilkDuvar = duvarlar, ilkCit = cit;
-    const k = new Kamera(); k.mx = x; k.my = y; k.zum = innerWidth < 500 ? 0.95 : 1.15;
+    const k = new Kamera(); k.mx = x; k.my = y; k.zum = innerWidth < 500 ? 0.95 : 1.15; k.don = donAl();
     s.current = { k, x, y, yol: [], hedefE: null, adim: 0, yon: 1, bravo: 0, ucan: [], takip: true, sonAlan: null, t: 0, robot: [0, 0], robotT: 0, _duvar: ilkDuvar, cit: ilkCit };
   }
 
@@ -390,7 +395,7 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
       const [hx, hy] = o.yol[0];
       const dx = hx - o.x, dy = hy - o.y, uz = Math.hypot(dx, dy), hiz = 3.6 * dt;
       if (uz <= hiz) { o.x = hx; o.y = hy; o.yol.shift(); } else { o.x += dx / uz * hiz; o.y += dy / uz * hiz; }
-      const sx = dx - dy; if (Math.abs(sx) > 0.01) o.yon = sx > 0 ? 1 : -1;
+      const [ru, rv] = o.k.rn(dx, dy); const sx = ru - rv; if (Math.abs(sx) > 0.01) o.yon = sx > 0 ? 1 : -1;
       o.adim += dt * 11;
       if (!o.yol.length) {
         try { localStorage.setItem(KONUM, JSON.stringify([o.x, o.y])); } catch {}
@@ -417,7 +422,7 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
   const asagi = (ev) => {
     tuval.current.setPointerCapture?.(ev.pointerId);
     const q = p.current; q.noktalar.set(ev.pointerId, [ev.offsetX, ev.offsetY]);
-    if (q.noktalar.size === 1) { q.basla = [ev.offsetX, ev.offsetY, s.current.k.mx, s.current.k.my]; q.surukle = false; }
+    if (q.noktalar.size === 1) { const k = s.current.k; q.basla = [ev.offsetX, ev.offsetY, k.mx, k.my, ...k.dunya(ev.offsetX, ev.offsetY)]; q.surukle = false; }
     else if (q.noktalar.size === 2) { const [a, b] = [...q.noktalar.values()]; q.iki = { uz: Math.hypot(a[0] - b[0], a[1] - b[1]), zum: s.current.k.zum }; q.surukle = true; }
   };
   const hareket = (ev) => {
@@ -430,8 +435,9 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
     if (!q.surukle && Math.hypot(dx, dy) > 8) q.surukle = true;
     if (q.surukle) {
       s.current.takip = false;
-      const a = dx / (k.tw / 2), b = dy / (k.th / 2);
-      k.mx = q.basla[2] - (a + b) / 2; k.my = q.basla[3] - (b - a) / 2;
+      k.mx = q.basla[2]; k.my = q.basla[3];
+      const [wx, wy] = k.dunya(ev.offsetX, ev.offsetY);
+      k.mx = q.basla[2] - (wx - q.basla[4]); k.my = q.basla[3] - (wy - q.basla[5]);
     }
   };
   const yukari = (ev) => {
@@ -445,7 +451,7 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
     const o = s.current, k = o.k;
     // önce eşyalar (öndekinden arkaya)
     const adaylar = ESYALAR.filter((e) => e.e).map((e) => ({ e, kutu: ekranKutusu(k, e) })).filter(({ kutu: b }) => sx >= b[0] && sx <= b[2] && sy >= b[1] && sy <= b[3]);
-    adaylar.sort((a, b) => (b.e.x + b.e.g + b.e.y + b.e.d) - (a.e.x + a.e.g + a.e.y + a.e.d));
+    adaylar.sort((a, b) => k.derin(b.e.x + b.e.g / 2, b.e.y + b.e.d / 2) - k.derin(a.e.x + a.e.g / 2, a.e.y + a.e.d / 2));
     if (adaylar.length) { const e = adaylar[0].e.e; const n = eylemNoktasi(e); if (n) yuru(n[0], n[1], e); return; }
     const [wx, wy] = k.dunya(sx, sy);
     const a = ALANLAR.find((z) => !z.gizli && z.g > 0 && wx >= z.x && wx <= z.x + z.g && wy >= z.y && wy <= z.y + z.d);
@@ -467,6 +473,8 @@ function Gezinti({ ref_, durum, onEylem, onAlan, sayfaAcik }) {
     <div class="ev-zum">
       <button class="yuvarlak" aria-label="Yakınlaştır" onClick=${() => { const k = s.current.k; k.zum = sinir(k.zum * 1.2, 0.5, 2.4); }}><${Ikon} ad="arti" boy=${16} /></button>
       <button class="yuvarlak" aria-label="Uzaklaştır" onClick=${() => { const k = s.current.k; k.zum = sinir(k.zum / 1.2, 0.5, 2.4); }}><span style="font-size:20px;line-height:1">−</span></button>
+      <button class="yuvarlak" aria-label="Sola döndür" onClick=${() => { const k = s.current.k; k.don = (k.don + 3) % 4; donKaydet(k.don); }}><span style="font-size:18px;line-height:1">⟲</span></button>
+      <button class="yuvarlak" aria-label="Sağa döndür" onClick=${() => { const k = s.current.k; k.don = (k.don + 1) % 4; donKaydet(k.don); }}><span style="font-size:18px;line-height:1">⟳</span></button>
       <button class="yuvarlak" aria-label="Karaktere dön" onClick=${() => { s.current.takip = true; }}><${Ikon} ad="oto" boy=${16} /></button>
     </div>
   </div>`;
@@ -492,11 +500,11 @@ function ciz(ctx, o, durum) {
   for (const a of ALANLAR) alanCiz(ctx, k, a, { yakin: o.sonAlan });
   // derinliğe göre sırala: duvarlar, çit, eşyalar, karakter
   const liste = [];
-  for (const w of duvarlarCache(o)) liste.push({ k: w.x + w.g / 2 + w.y + w.d / 2, f: () => duvarCiz(ctx, k, w, DUVAR_RENK[bolge(w.x + w.g / 2 - 0.2, w.y + w.d / 2 - 0.2)] ?? '#EFE6D8') });
-  for (const c of o.cit) liste.push({ k: c.x + c.g / 2 + c.y + c.d / 2, f: () => kutu(ctx, k, c.x, c.y, c.g, c.d, 0, c.h, '#3F6B3A', { kenar: '#2F5229' }) });
+  for (const w of duvarlarCache(o)) liste.push({ k: k.derin(w.x + w.g / 2, w.y + w.d / 2), f: () => duvarCiz(ctx, k, w, DUVAR_RENK[bolge(w.x + w.g / 2 - 0.2, w.y + w.d / 2 - 0.2)] ?? '#EFE6D8') });
+  for (const c of o.cit) liste.push({ k: k.derin(c.x + c.g / 2, c.y + c.d / 2), f: () => kutu(ctx, k, c.x, c.y, c.g, c.d, 0, c.h, '#3F6B3A', { kenar: '#2F5229' }) });
   const ed = { ...durum, t: o.t, robot: o.robot, robotCalisiyor: true, kahveBuhar: true, dusAkiyor: o.sonAlan === 'z-dus', camasirCalisiyor: false };
-  for (const e of ESYALAR) liste.push({ k: e.gec ? -100 + e.x + e.y : e.x + e.g / 2 + e.y + e.d / 2 + (e.z ? 0.3 : 0), f: () => esyaCiz(ctx, k, e, ed) });
-  liste.push({ k: o.x + o.y + 0.25, f: () => karakterCiz(ctx, k, o.x, o.y, { yon: o.yon, adim: o.adim, poz: o.bravo > 0 ? 'bravo' : o.yol.length ? 'yuru' : 'dur', t: o.t, yuk: durum.elde }) });
+  for (const e of ESYALAR) liste.push({ k: e.gec ? -100 + k.derin(e.x, e.y) : k.derin(e.x + e.g / 2, e.y + e.d / 2) + (e.z ? 0.3 : 0), f: () => esyaCiz(ctx, k, e, ed) });
+  liste.push({ k: k.derin(o.x, o.y) + 0.25, f: () => karakterCiz(ctx, k, o.x, o.y, { yon: o.yon, adim: o.adim, poz: o.bravo > 0 ? 'bravo' : o.yol.length ? 'yuru' : 'dur', t: o.t, yuk: durum.elde }) });
   liste.sort((a, b) => a.k - b.k);
   for (const x of liste) x.f();
   for (const a of ALANLAR) alanYazisi(ctx, k, a, [o.x, o.y]);
@@ -510,6 +518,230 @@ function ciz(ctx, o, durum) {
   for (const u of o.ucan) { const [sx, sy] = k.ekran(u.dunya[0], u.dunya[1], 2.4); ucanYaziCiz(ctx, sx, sy, u.metin, u.t); }
 }
 const duvarlarCache = (o) => o._duvar;
+
+// ---------------------------------------------------------------- karakterin gözünden
+
+const BAKIS = 'mali_ev_bakis';
+const bakisAl = () => { try { const v = Number(localStorage.getItem(BAKIS)); return localStorage.getItem(BAKIS) != null && Number.isFinite(v) ? v : Math.PI / 2; } catch { return Math.PI / 2; } };
+const aciFark = (a, b) => { let f = (a - b) % (Math.PI * 2); if (f > Math.PI) f -= Math.PI * 2; if (f < -Math.PI) f += Math.PI * 2; return f; };
+const alanda = (z, x, y) => !z.gizli && z.g > 0 && x >= z.x && x <= z.x + z.g && y >= z.y && y <= z.y + z.d;
+const odaHedefi = (id) => {
+  const o = [...ODALAR, ...DIS].find((x) => x.id === id); if (!o) return null;
+  const [x, y, g, dd] = o.r[0];
+  return id === 'bahce' ? [11, 15] : id === 'otopark' ? [13.5, 18.9] : [x + g / 2, y + dd / 2];
+};
+
+function GozGezinti({ ref_, durum, onAlan }) {
+  const tuval = useRef(null);
+  const d = useRef(durum); d.current = durum;
+  const cb = useRef(onAlan); cb.current = onAlan;
+  const [oda, setOda] = useState(null);
+  const [ipucu, setIpucu] = useState(true);
+  const iz = useMemo(() => izgaraKur(), []);
+  const sahne = useMemo(() => sahneKur(iz), [iz]);
+  const s = useRef(null);
+  if (!s.current) {
+    const [x, y] = konumAl();
+    const k = new GozKamera(); k.x = x; k.y = y; k.a = bakisAl();
+    s.current = { k, sahne, yol: [], hedefE: null, bak: null, cubuk: [0, 0], tus: new Set(), adim: 0, t: 0, ucan: [], cizilen: [], sonAlan: ALANLAR.find((z) => alanda(z, x, y))?.id ?? null };
+  }
+  const kaydet = () => { const k = s.current.k; try { localStorage.setItem(KONUM, JSON.stringify([k.x, k.y])); localStorage.setItem(BAKIS, String(k.a)); } catch {} };
+
+  useEffect(() => {
+    ref_.current = {
+      kutla: (metin) => { s.current.ucan.push({ metin, t: 0 }); },
+      git: (x, y, e) => yuru(x, y, e),
+    };
+    return () => { ref_.current = null; };
+  });
+
+  const yuru = (x, y, e = null) => {
+    const o = s.current;
+    const yol = yolBul(iz, [o.k.x, o.k.y], [x, y]);
+    if (!yol) return;
+    o.yol = yol; o.hedefE = e; o.bak = null;
+    if (yol.length === 0) var_(o);
+  };
+  // varış: eşyaya dön, sayfasını aç
+  function var_(o) {
+    const e = o.hedefE; o.hedefE = null;
+    kaydet();
+    if (!e) { alanKontrol(o); return; }
+    const it = ESYALAR.find((x) => x.e === e);
+    if (it) o.bak = [it.x + it.g / 2, it.y + it.d / 2];
+    o.sonAlan = ALANLAR.find((a) => a.e === e)?.id ?? null;
+    cb.current(e);
+  }
+  function alanKontrol(o) {
+    const a = ALANLAR.find((z) => alanda(z, o.k.x, o.k.y));
+    if (!a) { o.sonAlan = null; return; }
+    if (o.sonAlan === a.id) return;
+    o.sonAlan = a.id; cb.current(a.e);
+  }
+
+  // ---- çarpışma (yol ızgarası ve duvar kenarları)
+  const hc = (x, y) => { const i = Math.floor(x / iz.S), j = Math.floor(y / iz.S); return i < 0 || j < 0 || i >= iz.NX || j >= iz.NY ? -1 : j * iz.NX + i; };
+  const kom = (a, b) => { const NX = iz.NX; if (b === a + 1 && b % NX !== 0) return !iz.sagKapali[a]; if (b === a - 1 && a % NX !== 0) return !iz.sagKapali[b]; if (b === a + NX) return !iz.altKapali[a]; if (b === a - NX) return !iz.altKapali[b]; return false; };
+  const gecer = (x0, y0, x1, y1) => {
+    const a = hc(x0, y0), b = hc(x1, y1);
+    if (b < 0 || iz.dolu[b]) return false;
+    if (a === b) return true;
+    if (a < 0) return false;
+    const NX = iz.NX, ai = a % NX, aj = (a / NX) | 0, bi = b % NX, bj = (b / NX) | 0;
+    if (Math.abs(ai - bi) + Math.abs(aj - bj) > 1) {
+      const m1 = aj * NX + bi, m2 = bj * NX + ai;
+      return (!iz.dolu[m1] && kom(a, m1) && kom(m1, b)) || (!iz.dolu[m2] && kom(a, m2) && kom(m2, b));
+    }
+    return kom(a, b);
+  };
+  const kay = (k, dx, dy) => {
+    const R = 0.22;
+    if (dx && gecer(k.x, k.y, k.x + dx + Math.sign(dx) * R, k.y)) k.x += dx;
+    if (dy && gecer(k.x, k.y, k.x, k.y + dy + Math.sign(dy) * R)) k.y += dy;
+  };
+
+  useEffect(() => {
+    const c = tuval.current, ctx = c.getContext('2d');
+    let raf = 0, son = performance.now(), canli = true;
+    const boyut = () => { const r = c.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); c.width = r.width * dpr; c.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); s.current.k.W = r.width; s.current.k.H = r.height; };
+    boyut();
+    const ro = new ResizeObserver(boyut); ro.observe(c);
+    const kare = (simdi) => {
+      if (!canli) return;
+      const dt = Math.min(0.05, (simdi - son) / 1000); son = simdi;
+      adimAt(s.current, dt);
+      cizGoz(ctx, s.current, d.current);
+      raf = requestAnimationFrame(kare);
+    };
+    raf = requestAnimationFrame(kare);
+    const yaziyor = (ev) => /INPUT|TEXTAREA|SELECT/.test(ev.target?.tagName ?? '');
+    const TUS = { w: 'i', arrowup: 'i', s: 'g', arrowdown: 'g', a: 'sol', arrowleft: 'sol', d: 'sag', arrowright: 'sag', q: 'ysol', e: 'ysag' };
+    const bas = (ev) => { if (yaziyor(ev)) return; const t = TUS[ev.key.toLowerCase()]; if (t) { s.current.tus.add(t); ev.preventDefault(); setIpucu(false); } };
+    const birak = (ev) => { const t = TUS[ev.key.toLowerCase()]; if (t) s.current.tus.delete(t); };
+    addEventListener('keydown', bas); addEventListener('keyup', birak);
+    const sure = setTimeout(() => setIpucu(false), 9000);
+    return () => { canli = false; cancelAnimationFrame(raf); ro.disconnect(); removeEventListener('keydown', bas); removeEventListener('keyup', birak); clearTimeout(sure); kaydet(); };
+  }, []);
+
+  function adimAt(o, dt) {
+    const k = o.k, T = o.tus;
+    o.t += dt;
+    let ileri = -o.cubuk[1] + (T.has('i') ? 1 : 0) - (T.has('g') ? 1 : 0);
+    const don = o.cubuk[0] + (T.has('sag') ? 1 : 0) - (T.has('sol') ? 1 : 0);
+    const yan = (T.has('ysag') ? 1 : 0) - (T.has('ysol') ? 1 : 0);
+    ileri = sinir(ileri, -1, 1);
+    let yuruyor = false;
+    if (ileri || don || yan) {
+      if (o.yol.length || o.hedefE) { o.yol = []; o.hedefE = null; }
+      o.bak = null;
+      k.a += don * 1.9 * dt;
+      if (ileri || yan) {
+        const ca = Math.cos(k.a), sa = Math.sin(k.a), h = 2.4 * dt;
+        kay(k, (ca * ileri - sa * yan) * h, (sa * ileri + ca * yan) * h);
+        yuruyor = true; alanKontrol(o);
+      }
+    } else if (o.yol.length) {
+      const [hx, hy] = o.yol[0];
+      const dx = hx - k.x, dy = hy - k.y, uz = Math.hypot(dx, dy), h = 2.6 * dt;
+      if (uz > 0.02) k.a += aciFark(Math.atan2(dy, dx), k.a) * Math.min(1, dt * 7);
+      if (uz <= h) { k.x = hx; k.y = hy; o.yol.shift(); } else { k.x += dx / uz * h; k.y += dy / uz * h; }
+      yuruyor = true;
+      if (!o.yol.length) var_(o);
+    }
+    if (o.bak) { const f = aciFark(Math.atan2(o.bak[1] - k.y, o.bak[0] - k.x), k.a); k.a += f * Math.min(1, dt * 6); if (Math.abs(f) < 0.01) o.bak = null; }
+    if (yuruyor) o.adim += dt * 9;
+    k.z = GOZ + (yuruyor ? Math.sin(o.adim) * 0.022 : 0);
+    const b = bolge(k.x, k.y); if (b !== o._oda) { o._oda = b; setOda(b); }
+    for (const u of o.ucan) u.t += dt / 1.6;
+    o.ucan = o.ucan.filter((u) => u.t < 1);
+  }
+
+  // ---- bakma (sürükle), dokunma, çubuk
+  const p = useRef(null);
+  const asagi = (ev) => { tuval.current.setPointerCapture?.(ev.pointerId); const k = s.current.k; p.current = { x: ev.offsetX, y: ev.offsetY, a: k.a, p: k.p, surukle: false, id: ev.pointerId }; };
+  const hareket = (ev) => {
+    const q = p.current; if (!q || q.id !== ev.pointerId) return;
+    const dx = ev.offsetX - q.x, dy = ev.offsetY - q.y;
+    if (!q.surukle && Math.hypot(dx, dy) > 8) { q.surukle = true; setIpucu(false); }
+    if (q.surukle) { const k = s.current.k; k.a = q.a - dx * 0.0055; k.p = sinir(q.p + dy * 0.004, -0.6, 0.45); }
+  };
+  const yukari = (ev) => { const q = p.current; if (!q || q.id !== ev.pointerId) return; p.current = null; if (!q.surukle) dokun(ev.offsetX, ev.offsetY); };
+  const tekerlek = (ev) => { ev.preventDefault(); const k = s.current.k; k.fov = sinir(k.fov * (ev.deltaY < 0 ? 0.92 : 1.08), 0.8, 1.7); };
+  function dokun(sx, sy) {
+    const o = s.current, k = o.k, c = o.cizilen;
+    setIpucu(false);
+    for (let i = c.length - 1; i >= 0; i--) {
+      if (!noktaIcinde(sx, sy, c[i].pts)) continue;
+      const sh = c[i].sahip;
+      if (sh.e) {
+        const it = sh.e, e = it.e, n = eylemNoktasi(e);
+        const uz = Math.hypot(it.x + it.g / 2 - k.x, it.y + it.d / 2 - k.y);
+        if (uz < 2.3 || !n) { o.yol = []; o.hedefE = e; var_(o); } else yuru(n[0], n[1], e);
+        return;
+      }
+      if (sh.alan) { const a = sh.alan; yuru(a.x + a.g / 2, a.y + a.d / 2, a.e); return; }
+      if (sh.zemin) { const w = k.zemine(sx, sy); if (w && bolge(w[0], w[1])) yuru(w[0], w[1]); return; }
+      return; // duvar, tavan, çit
+    }
+  }
+  const cubukRef = useRef(null);
+  const [topuz, setTopuz] = useState([0, 0]);
+  const cubukAsagi = (ev) => { ev.currentTarget.setPointerCapture?.(ev.pointerId); setIpucu(false); cubukHareket(ev, true); };
+  const cubukHareket = (ev, zorla) => {
+    if (!zorla && !(ev.buttons || ev.pointerType === 'touch')) return;
+    const r = cubukRef.current.getBoundingClientRect(), R = r.width / 2;
+    let x = (ev.clientX - r.left - R) / R, y = (ev.clientY - r.top - R) / R;
+    const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+    const ol = (v) => (Math.abs(v) < 0.15 ? 0 : v);
+    s.current.cubuk = [ol(x), ol(y)]; setTopuz([x, y]);
+  };
+  const cubukBirak = () => { s.current.cubuk = [0, 0]; setTopuz([0, 0]); };
+
+  return html`<div class="ev-tuval-kap">
+    <canvas ref=${tuval} class="ev-tuval" onPointerDown=${asagi} onPointerMove=${hareket} onPointerUp=${yukari} onPointerCancel=${() => { p.current = null; }} onWheel=${tekerlek}
+      aria-label="Karakterin gözünden ev. Sürükleyerek etrafına bak, bir yere ya da eşyaya dokun."></canvas>
+    <div class="ev-odalar">${[...ODALAR, ...DIS].map((o) => html`<button class=${'ev-oda-cip' + (oda === o.id ? ' secili' : '')} onClick=${() => { const h = odaHedefi(o.id); if (h) yuru(h[0], h[1]); }}>${o.ad}</button>`)}</div>
+    <div class="ev-cubuk" ref=${cubukRef} role="slider" aria-label="Yürü: yukarı ileri, aşağı geri, yanlara dön"
+      onPointerDown=${cubukAsagi} onPointerMove=${(ev) => cubukHareket(ev)} onPointerUp=${cubukBirak} onPointerCancel=${cubukBirak}>
+      <span class="ev-topuz" style=${{ transform: `translate(${topuz[0] * 34}px, ${topuz[1] * 34}px)` }}></span>
+    </div>
+    ${ipucu && html`<div class="ev-ipucu">Sürükle: etrafına bak · Daire: yürü · Dokun: oraya git ya da eşyayı aç</div>`}
+  </div>`;
+}
+
+function cizGoz(ctx, o, durum) {
+  const k = o.k, W = k.W, H = k.H;
+  o.cizilen = gozCiz(ctx, k, o.sahne, { gece: durum.gece, yakinAlan: o.sonAlan });
+  const burada = bolge(k.x, k.y), vakit = new Set(durum.vakit), gorulen = new Set();
+  // yakındaki eşyaların adları ve vakti gelen işaretleri
+  for (const e of ESYALAR) {
+    if (!e.e || gorulen.has(e.e)) continue;
+    const cx = e.x + e.g / 2, cy = e.y + e.d / 2, uz = Math.hypot(cx - k.x, cy - k.y);
+    if (uz > 7 || (bolge(cx, cy) !== burada && uz > 2.2)) continue;
+    const P = k.ekran([cx, cy, (e.z ?? 0) + Math.max(e.h, 0.2) + 0.28]);
+    if (!P || P[0] < -40 || P[0] > W + 40 || P[1] < 0 || P[1] > H) continue;
+    gorulen.add(e.e);
+    ctx.globalAlpha = Math.max(0.35, 1 - uz / 8);
+    hap(ctx, P[0], P[1], (EYLEM[e.e]?.baslik ?? e.ad).toLocaleUpperCase('tr-TR'), { arka: 'rgba(70,55,45,.8)', boy: uz < 3 ? 11 : 9 });
+    ctx.globalAlpha = 1;
+    if (vakit.has(e.e)) isaretCiz(ctx, P[0], P[1] - 26, o.t);
+  }
+  for (const a of ALANLAR) {
+    if (a.gizli || !a.g) continue;
+    const cx = a.x + a.g / 2, cy = a.y + a.d / 2, uz = Math.hypot(cx - k.x, cy - k.y);
+    if (uz > 6 || (bolge(cx, cy) !== burada && uz > 2.2)) continue;
+    const P = k.ekran([cx, cy, 0.05]); if (!P) continue;
+    ctx.font = '800 11px Quicksand, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(60,50,40,.55)'; ctx.strokeText(a.ad, P[0], P[1]); ctx.fillStyle = '#fff'; ctx.fillText(a.ad, P[0], P[1]);
+  }
+  // Pfand etiketleri
+  const etiket = (x, y, z, metin, arka) => { const P = k.ekran([x, y, z]); if (P && Math.hypot(x - k.x, y - k.y) < 12) hap(ctx, P[0], P[1], metin, { arka }); };
+  if (durum.pfandKulube > 0) etiket(16.9, 14, 2.3, `KULÜBE ${durum.pfandKulube}`, '#3E7D5A');
+  if (durum.pfandAraba > 0) etiket(13.25, 19.95, 1.7, `BAGAJ ${durum.pfandAraba}`, '#B5562F');
+  if (durum.elde > 0) hap(ctx, W / 2, H - 30, `ELİNDE PFAND ${durum.elde}`, { arka: '#B5562F', boy: 12 });
+  for (const u of o.ucan) ucanYaziCiz(ctx, W / 2, H * 0.34, u.metin, u.t);
+  haritaCiz(ctx, k, W - 18 * 4.2 - 14, 54, 4.2, durum.gece);
+}
 
 // ---------------------------------------------------------------- 2D kroki
 
