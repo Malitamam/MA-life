@@ -292,7 +292,7 @@ export const SayacMantik = {
     { anahtar: 'dyson', ad: 'Dyson', ikon: 'supurge', renk: 3, secenekler: [] },
     { anahtar: 'roborock', ad: 'Roborock', ikon: 'robot', renk: 2, secenekler: [] },
   ],
-  PANO: ['bulasik_calis', 'camasir', 'kurutucu', 'cop'],
+  PANO: ['bulasik_calis', 'camasir', 'kurutucu', 'asma', 'cop'],
   CAMASIR_SURE: ['Kısa', 'Uzun'],
   CAMASIR_TUR: ['Beyaz', 'Siyah', 'Renkli', 'Nehir', 'Havlu'],
   hazir: (anahtar) => SayacMantik.HAZIR.find((h) => h.anahtar === anahtar) ?? null,
@@ -365,7 +365,8 @@ export const PanoMantik = {
 
 // ---------------- PanoDuzen ----------------
 export const PanoDuzen = {
-  BLOKLAR: ['gun', 'zincir', 'sayac', 'buton'],
+  // Pano şimdilik sadece hızlı kısa yollar: ajanda (gun) ve zincir blokları kaldırıldı (kullanıcı isteği 2026-11-06).
+  BLOKLAR: ['sayac', 'buton'],
   BUTONLAR: ['takviye', 'para', 'alisveris', 'ozet', 'etkinlik', 'elle', 'ses'],
   bloklar: (k) => PanoDuzen.sirala(k, PanoDuzen.BLOKLAR),
   butonlar: (k) => PanoDuzen.sirala(k, PanoDuzen.BUTONLAR),

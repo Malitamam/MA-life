@@ -14,6 +14,9 @@ import { Is } from './islem.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
+const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve paketi' };
+const kisaAd = (ad) => KISA[ad] ?? ad;
+
 export function PanoEkrani() {
   const depo = useVeri();
   const bugun = useBugun();
@@ -49,8 +52,13 @@ export function PanoEkrani() {
     if (gr.yapildi || goruldu.has(gr.a.id)) continue;
     goruldu.add(gr.a.id); ajandaIs.push([g, gr]);
   }
-  const sayaclar = [...SayacMantik.PANO.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean),
-    ...isler.filter((d) => d.yildizli && d.tur === 'SAYAC' && d.anahtar == null)];
+  // Hızlı kısa yollar: sabit beşli (bulaşık, çamaşır, kurutma, asma, çöp), sonra son 30 günde en çok kullanılan sayaçlar; en fazla 8.
+  const sabit = SayacMantik.PANO.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean);
+  const kullanim = new Map();
+  for (const k of depo.aralik(bugun - 30, bugun)) if (k.kaynak === 'SAYAC') kullanim.set(k.refId, (kullanim.get(k.refId) ?? 0) + 1);
+  const digerleri = isler.filter((d) => d.tur === 'SAYAC' && !sabit.includes(d) && (d.yildizli || kullanim.get(d.id)))
+    .sort((a, b) => (kullanim.get(b.id) ?? 0) - (kullanim.get(a.id) ?? 0) || a.id - b.id);
+  const sayaclar = [...sabit, ...digerleri].slice(0, 8);
   const evYakin = PanoMantik.evIsleriYakin(isler, bugun);
   const isaretMap = new Map();
   for (const x of M.db.hepsi('isaretler')) { if (!isaretMap.has(x.zincirId)) isaretMap.set(x.zincirId, new Map()); isaretMap.get(x.zincirId).set(x.gun, x.adet); }
@@ -105,16 +113,14 @@ export function PanoEkrani() {
       ${zincirler.map((z) => html`<${ZincirSatiri} key=${z.id} z=${z} isaretler=${isaretMap.get(z.id) ?? new Map()} bugun=${bugun}
         onDokun=${(g) => depo.zincirDokun(z.id, g)} onAc=${() => git('zincir/' + z.id)} />`)}
     </${Kart}>`,
-    sayac: () => (sayaclar.length || duzenMod) && html`<${Kart} dikey=${8}>
-      <div class="sar" style="justify-content:space-evenly;gap:6px 0">${sayaclar.map((d) => html`<button key=${d.id} aria-label=${d.ad + ' +1'}
-          style="width:54px;border-radius:12px;padding:4px 0;display:flex;flex-direction:column;align-items:center" ...${uzunBas(() => git('is/' + d.id), () => yap(d))}>
-        <div style="position:relative">
-          <div class="daire" style=${{ width: '38px', height: '38px', background: saydam(vurgu(d.renk), 22) }}><${Ikon} ad=${d.ikon} boy=${19} renk=${vurgu(d.renk)} /></div>
-          ${d.bugunSayi > 0 && html`<${MiniRozet} metin=${String(d.bugunSayi)} stil=${{ top: '-3px', right: '-4px' }} />`}
-        </div>
-        <span class="bk soluk tek" style="max-width:54px">${d.ad}</span>
+    sayac: () => (sayaclar.length || duzenMod) && html`<div>
+      <div class="lk soluk" style="padding:0 2px 6px">Hızlı kayıt · dokun, sayaca yazılsın</div>
+      <div class="izgara4">${sayaclar.map((d) => html`<button key=${d.id} class="hizli" aria-label=${d.ad + ' +1'} ...${uzunBas(() => git('is/' + d.id), () => yap(d))}>
+        <div class="daire" style=${{ width: '44px', height: '44px', background: saydam(vurgu(d.renk), 22) }}><${Ikon} ad=${d.ikon} boy=${24} renk=${vurgu(d.renk)} /></div>
+        <span class="lk iki" style="margin-top:4px">${kisaAd(d.ad)}</span>
+        ${d.bugunSayi > 0 && html`<${MiniRozet} metin=${String(d.bugunSayi)} stil=${{ top: '4px', right: '4px' }} />`}
       </button>`)}</div>
-    </${Kart}>`,
+    </div>`,
     buton: () => {
       const ham = [
         { anahtar: 'ev', ad: 'Ev işleri', ikon: 'ev', renk: RENK.adacayi, bilgi: evYakin.length === 0 ? '2 günde yok' : `2 günde ${evYakin.length}`, onClick: () => git('takip') },

@@ -211,7 +211,7 @@ test('özet, not, pano düzeni, bildirim', () => {
   const o = OzetMantik.hesapla(k, [{ gun: 1, seviye: 2 }], a);
   assert.equal(o.toplam, 3); assert.equal(o.aktifGun, 2); assert.deepEqual(o.enCok, [['Su içtim', 2]]); assert.equal(o.paraSent, 1000); assert.deepEqual(o.modlar, [0, 0, 1]);
   assert.deepEqual(NotMantik.satirlar('- süt\n• ekmek\n\n1. lamba\n2) korniş'), ['süt', 'ekmek', 'lamba', 'korniş']);
-  assert.deepEqual(PanoDuzen.bloklar('sayac,gun'), ['sayac', 'gun', 'zincir', 'buton']);
+  assert.deepEqual(PanoDuzen.bloklar('buton,gun'), ['buton', 'sayac']);
   assert.deepEqual(PanoDuzen.tasi(['a', 'b', 'c'], 1, -1), ['b', 'a', 'c']);
   assert.ok(BildirimMantik.sessizMi(23 * 60, 22 * 60, 7 * 60));
   assert.ok(!BildirimMantik.sessizMi(8 * 60, 22 * 60, 7 * 60));
