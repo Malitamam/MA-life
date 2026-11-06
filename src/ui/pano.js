@@ -50,6 +50,7 @@ export function PanoEkrani() {
   const [etkinlikYakala, setEtkinlikYakala] = useState(false);
   const [kartAcik, setKartAcik] = useState(false);
   const [favoriKat, setFavoriKat] = useState(null);
+  const [magaza, setMagaza] = useState(false);
   const [yap0, tutarPenceresi] = useYap();
   const [sayacGiris, sayacPenceresi] = useSayacGirisi();
   const kayit = useKayitta();
@@ -127,8 +128,10 @@ export function PanoEkrani() {
       const ogeler = tumOgeler(kat);
       if (!ogeler.length && !kat.liste) return null;
       if (kat.liste) return html`<section key=${kat.k} class="pano-kat" aria-label=${kat.ad}>
-        <button class="satir pano-kat-bas" style="width:100%;text-align:left" onClick=${() => git('alim')}>
-          <span class="lk soluk dolu">${kat.ad} · ${acikListe.length} ürün</span><${Ikon} ad="ileri" boy=${13} renk="var(--soluk)" /></button>
+        <div class="satir pano-kat-bas">
+          <button class="lk soluk dolu" style="text-align:left;padding:6px 0" onClick=${() => git('alim')}>${kat.ad} · ${acikListe.length} ürün</button>
+          <button class="magaza-btn" onClick=${() => setMagaza(true)}>🛒 Alışverişteyim</button>
+        </div>
         ${acikListe.length === 0 && html`<div class="bk soluk" style="padding:0 2px">Liste boş.</div>`}
         ${ogeler.length > 0 && html`<div class="izgara6">${ogeler.map((o) => html`<${KucukKutu} key=${o.id} o=${o} dar />`)}</div>`}
         ${listeDisi.length > 0 && html`<div class="sar" style="gap:6px">${listeDisi.map((m) => html`<button key=${m.id} class="liste-cip" onClick=${() => git('alim')}>${m.ad}</button>`)}</div>`}
@@ -152,6 +155,7 @@ export function PanoEkrani() {
     const ogeler = tumOgeler(kat);
     return html`<${FavoriDialog} kat=${kat} ogeler=${ogeler} secili=${seciliIdler(kat, ogeler)} onKapat=${() => setFavoriKat(null)} />`;
   })()}
+  ${magaza && html`<${AlisveristeyimDialog} onKapat=${() => setMagaza(false)} />`}
   ${etkinlikYakala && html`<${EtkinlikYakalaDialog} onKapat=${() => setEtkinlikYakala(false)}
     onKaydet=${(m) => { Is.notKaydet({ metin: m, olusturma: depo.simdi(), islendi: false }); setEtkinlikYakala(false); }} />`}
   ${kartAcik && html`<${KartDialog} bugun=${bugun} onKapat=${() => setKartAcik(false)} onTumu=${() => { setKartAcik(false); git('kart'); }} />`}
@@ -171,6 +175,51 @@ export function KucukKutu({ o, dar }) {
     ${o.secili && html`<span class="kkutu-tik"><${Ikon} ad="tik" boy=${9} /></span>`}
     ${o.rozet && html`<${MiniRozet} metin=${o.rozet} stil=${{ top: '2px', right: '2px' }} />`}
   </button>`;
+}
+
+/**
+ * "Alışverişteyim" kartı: market listesi. Dokun = aldım (üstü çizilir), "Bulamadım" = listede kalır, bir dahaki
+ * markette "geçen sefer bulunamadı" diye görünür. İşaretler hemen kaydedilir; kapatıp açınca kaldığın yerden devam.
+ * "Alışverişi bitir": alınanlar listeden düşer, Günlük'e "Markete gidildi" yazılır; bulunamayanlar ve dokunulmayanlar kalır.
+ */
+function AlisveristeyimDialog({ onKapat }) {
+  useVeri();
+  const liste = M.db.hepsi('alisveris').filter((m) => !m.online).sort((a, b) => (a.bulunamadi ? 1 : 0) - (b.bulunamadi ? 1 : 0) || a.eklenme - b.eklenme);
+  const [yok, setYok] = useState(() => new Set());
+  const alinan = liste.filter((m) => m.alindi).length;
+  const aldim = (m) => {
+    if (yok.has(m.id)) { const y = new Set(yok); y.delete(m.id); setYok(y); }
+    M.depo.alisverisIsaretle(m, !m.alindi);
+  };
+  const bulamadim = (m) => {
+    const y = new Set(yok);
+    if (y.has(m.id)) { y.delete(m.id); M.db.guncelle('alisveris', m.id, { bulunamadi: m.oncekiBulunamadi ?? null, oncekiBulunamadi: undefined }); }
+    else { y.add(m.id); if (m.alindi) M.depo.alisverisIsaretle(m, false); M.db.guncelle('alisveris', m.id, { oncekiBulunamadi: m.bulunamadi ?? null, bulunamadi: Date.now() }); }
+    setYok(y);
+  };
+  const bitir = () => { Is.alisverisiBitir(); onKapat(); };
+  return html`<${Dialog} baslik="Alışverişteyim" onKapat=${onKapat} butonlar=${[
+    { metin: 'Kapat', onClick: onKapat },
+    { metin: alinan ? `Alışverişi bitir (${alinan})` : 'Alışverişi bitir', disabled: !alinan, onClick: bitir },
+  ]}>
+    <span class="bk soluk">${liste.length === 0 ? 'Market listesi boş.' : `${alinan} / ${liste.length} alındı · ürüne dokun: aldım`}</span>
+    ${liste.map((m) => {
+      const e = urunEmoji(m.ad);
+      const buSefer = yok.has(m.id);
+      return html`<div key=${m.id} class=${'magaza-satir' + (m.alindi ? ' alindi' : '') + (buSefer ? ' yok' : '')}>
+        <button class="magaza-ad" aria-label=${m.ad + (m.alindi ? ' alındı, geri al' : ' aldım')} onClick=${() => aldim(m)}>
+          <span class="magaza-tik">${m.alindi ? '✓' : ''}</span>
+          ${e !== '🛒' ? html`<span class="liste-emoji" aria-hidden="true">${e}</span>` : html`<${Ikon} ad=${m.ikon ?? 'paket'} boy=${16} renk=${RENK.mercan} />`}
+          <span class="dolu" style="min-width:0">
+            <span class="bm tek" style="display:block">${m.ad}</span>
+            ${m.bulunamadi && !buSefer && html`<span class="bk c-sari" style="display:block">geçen sefer bulunamadı</span>`}
+          </span>
+        </button>
+        <button class=${'bulamadim' + (buSefer ? ' secili' : '')} aria-pressed=${buSefer} onClick=${() => bulamadim(m)}>${buSefer ? 'Bulunamadı ✓' : 'Bulamadım'}</button>
+      </div>`;
+    })}
+    ${liste.length > 0 && html`<span class="bk soluk">Bulamadıkların listede kalır; başka markette alabilirsin.</span>`}
+  </${Dialog}>`;
 }
 
 /** Kategorinin ⋯ menüsü: hangi öğelerin panoda görüneceğini (favoriler) seçer. Sıra: seçiliş sırası. */
