@@ -133,3 +133,6 @@ textarea.girdi { resize: vertical; min-height: 120px; }
 
 .gizli { display: none !important; }
 .bos-alt { height: 4px; }
+.kur-serit { display: flex; align-items: center; gap: 10px; margin: 8px 12px 0; padding: 8px 8px 8px 10px; background: var(--yuzey); border-radius: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); animation: belir .2s; }
+.kur-serit img { border-radius: 8px; }
+.kur-btn { background: var(--mercan); color: var(--murekkep); font-weight: 700; padding: 9px 16px; border-radius: 18px; }

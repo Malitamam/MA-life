@@ -99,3 +99,22 @@ export function usePencere() {
   useEffect(() => { pencereF = setP; return () => { pencereF = null; }; }, []);
   return [p, setP];
 }
+
+/** Chrome'un kurulum olayı (index.html'de yakalanır). [olay, kur] döner; olay yoksa kurulamaz/kurulu. */
+export function useKurulum() {
+  const [olay, setOlay] = useState(globalThis.MALI_KUR ?? null);
+  useEffect(() => {
+    const f = () => setOlay(globalThis.MALI_KUR ?? null);
+    addEventListener('mali-kur', f);
+    return () => removeEventListener('mali-kur', f);
+  }, []);
+  const kur = async () => {
+    const e = globalThis.MALI_KUR;
+    if (!e) return;
+    e.prompt();
+    try { await e.userChoice; } catch {}
+    globalThis.MALI_KUR = null; setOlay(null);
+  };
+  return [olay, kur];
+}
+

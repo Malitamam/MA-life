@@ -2,7 +2,7 @@
 import { html, render, useState, useEffect } from '../vendor/preact-htm.js';
 import { Db } from './db.js';
 import { Depo } from './depo.js';
-import { M, temaUygula, useVeri, useBugun, gunuYenile, useRota, useSonIslem, usePencere, git, SEKMELER } from './ui/durum.js';
+import { M, temaUygula, useVeri, useBugun, gunuYenile, useRota, useSonIslem, usePencere, git, SEKMELER, useKurulum } from './ui/durum.js';
 import { Ikon, MetinButon, Toast, RENK } from './ui/ortak.js';
 import { Mantik, PanoMantik, StokMantik } from './mantik.js';
 import { PanoEkrani } from './ui/pano.js';
@@ -118,6 +118,22 @@ function Snack() {
     ${s.kayitId > 0 && html`<${MetinButon} onClick=${() => { Is.geriAl(s.kayitId); setS(null); }}>Geri al</${MetinButon}>`}</div>`;
 }
 
+const KUR_ERTELE = 'mali_kur_sonra';
+const kurErtelendi = () => { try { return Date.now() < Number(localStorage.getItem(KUR_ERTELE) || 0); } catch { return false; } };
+
+function KurulumSeridi() {
+  const [olay, kur] = useKurulum();
+  const [gizli, setGizli] = useState(kurErtelendi());
+  if (!olay || gizli) return null;
+  const sonra = () => { try { localStorage.setItem(KUR_ERTELE, String(Date.now() + 3 * 86_400_000)); } catch {} setGizli(true); };
+  return html`<div class="kur-serit" role="region" aria-label="Uygulamayı yükle">
+    <img src="ikon/192.png" width="32" height="32" alt="" />
+    <div class="dolu"><div class="bm">MALI'yi telefona yükle</div><div class="bk soluk">Ana ekrandan uygulama gibi açılır</div></div>
+    <${MetinButon} renk="var(--soluk)" onClick=${sonra}>Sonra</${MetinButon}>
+    <button class="kur-btn" onClick=${kur}>Yükle</button>
+  </div>`;
+}
+
 function Pencereler() {
   const [p, setP] = usePencere();
   const bugun = useBugun();
@@ -156,7 +172,8 @@ function Uygulama() {
 
   useEffect(() => { document.querySelector('.ust-alan > .icerik')?.scrollTo?.(0, 0); }, [rota]);
 
-  return html`<div class="ust-alan" style="padding-top:12px">
+  return html`<${KurulumSeridi} />
+    <div class="ust-alan" style="padding-top:12px">
       <${Ekran} key=${rota.split('/')[0]} rota=${rota} />
       <${Snack} />
     </div>

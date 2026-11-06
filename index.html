@@ -14,7 +14,12 @@
   <link rel="apple-touch-icon" href="ikon/180.png">
   <link rel="preload" href="fonts/quicksand.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="stil.css">
-  <script>globalThis.MALI_SURUM = '1.0.0';</script>
+  <script>
+    globalThis.MALI_SURUM = '1.0.0';
+    // Chrome'un "yükle" olayı uygulama kodu yüklenmeden gelebilir: erkenden yakala.
+    addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); globalThis.MALI_KUR = e; dispatchEvent(new Event('mali-kur')); });
+    addEventListener('appinstalled', () => { globalThis.MALI_KUR = null; dispatchEvent(new Event('mali-kur')); });
+  </script>
 </head>
 <body>
   <div id="uygulama"></div>

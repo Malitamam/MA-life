@@ -1,6 +1,6 @@
 // Arama, Özet ve Ayarlar (AramaEkrani.kt, OzetEkrani.kt, AyarlarEkrani.kt).
 import { html, useState, useRef } from '../../vendor/preact-htm.js';
-import { M, Ayar, useVeri, useBugun, git, geri } from './durum.js';
+import { M, Ayar, useVeri, useBugun, git, geri, useKurulum } from './durum.js';
 import { Ikon, Kart, Cip, YuvarlakButon, MetinButon, Dialog, Girdi, Anahtar, SesleYaz, bildir, vurgu, RENK } from './ortak.js';
 import { GunlukMantik, OzetMantik, ARKA_PLAN, tutarMetni } from '../mantik.js';
 import { gunBaslik, saatYazi, GUN_UZUN } from '../tarih.js';
@@ -107,6 +107,7 @@ export function AyarlarEkrani() {
   const [icler, setIcler] = useState(null);
   const dosya = useRef(null);
   const son = Ayar.sonYedek;
+  const [kurOlay, kur] = useKurulum();
   const kurulu = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 
   const dosyaSecildi = async (e) => {
@@ -169,6 +170,7 @@ export function AyarlarEkrani() {
       <div class="ts">Telefona kur</div>
       <div class="bk soluk">${kurulu ? 'MALI ana ekranda kurulu. Güncellemeler uygulamayı yeniden açınca kendiliğinden gelir.'
         : "Chrome'da sağ üstteki ⋮ menüsünden \"Ana ekrana ekle\" ya da \"Uygulamayı yükle\" seç. Sonra MALI ayrı bir uygulama gibi açılır; güncellemeler yeniden açınca gelir."}</div>
+      ${!kurulu && kurOlay && html`<button class="anabtn" style="margin-top:8px" onClick=${kur}>Uygulamayı yükle</button>`}
       <div class="bk soluk" style="margin-top:4px">Veriler bu telefonda, tarayıcının içinde durur. Tarayıcı verilerini silersen gider; haftalık yedeği Drive'a paylaşmayı unutma.</div>
     </${Kart}>
 
