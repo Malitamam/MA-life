@@ -5,8 +5,8 @@ import { Ikon, Kart, Cip, Segment, YuvarlakButon, IkonButon, TikButon, MetinButo
 import { AlimMantik, StokMantik, STOK_ESIGI, TAKVIYE_UYARI_GUN, parseEuro, sayi, tutarMetni as tl } from '../mantik.js';
 import { tarih, gunBaslik, gunAyHg, gunYil, AY_UZUN } from '../tarih.js';
 import { TarihButon } from './gunluk.js';
-import { KART_TUTARLARI, KucukKutu } from './pano.js';
-import { urunIkonu, urunEmoji, URUN_KATALOG } from '../ikonlar.js';
+import { KART_TUTARLARI, KucukKutu, UrunSimge } from './pano.js';
+import { urunIkonu, urunEmoji, urunRozet, URUN_KATALOG } from '../ikonlar.js';
 import { KATALOG_URUNLER, oneriler, sade } from '../katalog.js';
 import { Is } from './islem.js';
 
@@ -81,7 +81,7 @@ export function AlisverisEkrani() {
     ${onerilen.length > 0 && html`<div class="sar oneriler" style="gap:6px;padding-top:8px">${onerilen.map((o) => {
       const var_ = listede.has(kucukTr(o.ad));
       return html`<button key=${o.ad} class=${'oneri' + (var_ ? ' var' : '')} aria-label=${o.ad + (var_ ? ' (listede)' : ' listeye ekle')}
-        onClick=${() => { ekle(o.ad); setYeni(''); }}><span class="oneri-e" aria-hidden="true">${o.emoji}</span>${o.ad}${var_ ? ' ✓' : ''}</button>`;
+        onClick=${() => { ekle(o.ad); setYeni(''); }}><${UrunSimge} ad=${o.ad} sinif="oneri-e" />${o.ad}${var_ ? ' ✓' : ''}</button>`;
     })}</div>`}
     </${Kart}>
     <div>
@@ -92,7 +92,7 @@ export function AlisverisEkrani() {
       <div class="izgara6">
         ${hizli.map((ad) => {
           const var_ = listede.has(kucukTr(ad));
-          return html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad: hizliDuzen ? ad + ' ×' : ad, tamAd: ad, ikon: urunIkonu(ad), emoji: urunEmoji(ad), renk: RENK.mercan, zemin: 'color-mix(in srgb, var(--mercan) 18%, transparent)', secili: var_,
+          return html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad: hizliDuzen ? ad + ' ×' : ad, tamAd: ad, ikon: urunIkonu(ad), emoji: urunEmoji(ad), alt: urunRozet(ad), renk: RENK.mercan, zemin: 'color-mix(in srgb, var(--mercan) 18%, transparent)', secili: var_,
             onClick: () => { if (hizliDuzen) Ayar.hizliSecimler = hizli.filter((x) => x !== ad); else if (!var_) ekle(ad); } }} />`;
         })}
         <button class="kkutu dar" aria-label="Hızlı seçime ekle" onClick=${() => setHizliEkle(true)}><${Ikon} ad="arti" boy=${18} renk="var(--soluk)" /></button>
@@ -110,7 +110,7 @@ export function AlisverisEkrani() {
       ${liste.map((m) => {
         const eski = !m.alindi && simdi - m.eklenme > 7 * 86_400_000;
         return html`<div key=${m.id} class="satir" style="height:42px" ...${uzunBas(() => M.db.sil('alisveris', m.id), null)}>
-          ${urunEmoji(m.ad) !== '🛒' ? html`<span class="liste-emoji" aria-hidden="true">${urunEmoji(m.ad)}</span>`
+          ${urunEmoji(m.ad) !== '🛒' ? html`<${UrunSimge} ad=${m.ad} />`
             : html`<${Ikon} ad=${m.ikon && m.ikon !== 'paket' ? m.ikon : 'paket'} boy=${16} renk=${RENK.mercan} />`}
           <span class=${'bm dolu tek' + (m.alindi ? ' soluk cizik' : '')} style="margin-left:9px">${m.ad}</span>
           ${eski && html`<span class="tm c-mercan" style="padding:0 6px">!</span>`}
@@ -441,7 +441,7 @@ function KatalogDialog({ secili, onKapat, onKaydet }) {
   const katalogda = new Set(URUN_KATALOG.flatMap((g) => g.urunler.map(([ad]) => k(ad))));
   const kendi = secili.filter((ad) => !katalogda.has(k(ad)));
   const grup = (baslik, urunler) => html`<div class="lk soluk" style="margin-top:6px">${baslik}</div>
-    <div class="izgara5">${urunler.map(([ad, e]) => html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad, tamAd: ad, emoji: e, secili: var_(ad), onClick: () => degis(ad),
+    <div class="izgara5">${urunler.map(([ad, e, r]) => html`<${KucukKutu} key=${ad} dar o=${{ id: ad, ad, tamAd: ad, emoji: e, alt: r ?? urunRozet(ad), secili: var_(ad), onClick: () => degis(ad),
       etiket: ad + (var_(ad) ? ' seçili' : ' seç') }} />`)}</div>`;
   return html`<${Dialog} baslik="Sık alınanlar" onKapat=${onKapat} butonlar=${[
     { metin: 'Vazgeç', onClick: onKapat },

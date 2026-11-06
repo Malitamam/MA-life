@@ -1,101 +1,102 @@
 // Alışveriş ürün kataloğu: ~300 sık alınan ürün, renkli simgesiyle (emoji). Arama önerisi ve "Listeden seç" bunu kullanır.
 // Not: Unicode 15+ emojiler (eski telefonlarda kutu çıkar) bilerek kullanılmadı.
 
-const G = (grup, metin) => ({ grup, urunler: metin.trim().split('\n').map((s) => { const [ad, e] = s.trim().split('|'); return [ad.trim(), e.trim()]; }) });
+// Satır: "Ad|simge" ya da "Ad|simge|rozet". Rozet, aynı simgeyi paylaşan ürünleri ayırır (köşede küçük ikinci simge).
+const G = (grup, metin) => ({ grup, urunler: metin.trim().split('\n').map((s) => { const [ad, e, r] = s.trim().split('|'); return [ad.trim(), e.trim(), r?.trim() || null]; }) });
 
 const HAM = [
   G('Fırın ve kahvaltı', `
     Ekmek|🍞
-    Tam buğday ekmeği|🍞
-    Tost ekmeği|🍞
-    Brötchen|🥖
+    Tam buğday ekmeği|🍞|🌾
+    Tost ekmeği|🍞|🔥
+    Brötchen|🥖|🥨
     Baget|🥖
     Simit|🥯
-    Poğaça|🥐
+    Poğaça|🥐|🧀
     Kruvasan|🥐
     Lavaş|🫓
-    Yufka|🫓
-    Pide|🫓
+    Yufka|🫓|📃
+    Pide|🫓|🧀
     Yumurta|🥚
     Zeytin|🫒
-    Siyah zeytin|🫒
+    Siyah zeytin|🫒|⚫
     Bal|🍯
-    Reçel|🍓
-    Nutella|🍫
-    Tahin|🥜
-    Pekmez|🍯
-    Fıstık ezmesi|🥜
-    Müsli|🌾
-    Mısır gevreği|🥣
+    Reçel|🫙|🍓
+    Nutella|🫙|🍫
+    Tahin|🫙|⚪
+    Pekmez|🫙|🍇
+    Fıstık ezmesi|🫙|🥜
+    Müsli|🥣|🌾
+    Mısır gevreği|🥣|🌽
     Yulaf|🌾
     Tereyağı|🧈
-    Margarin|🧈`),
+    Margarin|🧈|🌻`),
   G('Peynir ve şarküteri', `
     Peynir|🧀
-    Beyaz peynir|🧀
-    Kaşar|🧀
-    Lor|🧀
-    Labne|🧀
-    Krem peynir|🧀
-    Hellim|🧀
-    Mozzarella|🧀
-    Parmesan|🧀
-    Sucuk|🌭
-    Salam|🥓
-    Pastırma|🥓
-    Jambon|🥓
+    Beyaz peynir|🧀|⚪
+    Kaşar|🧀|🟡
+    Lor|🧀|☁️
+    Labne|🫙|🧀
+    Krem peynir|🧀|🥄
+    Hellim|🧀|🔥
+    Mozzarella|🧀|🍅
+    Parmesan|🧀|🍝
+    Sucuk|🌭|🔥
+    Salam|🥓|⭕
+    Pastırma|🥓|🌶️
+    Jambon|🥓|🥪
     Sosis|🌭`),
   G('Sebze', `
     Brokoli|🥦
-    Karnabahar|🥦
+    Karnabahar|🥦|⚪
     Domates|🍅
-    Cherry domates|🍅
+    Cherry domates|🍅|🤏
     Salatalık|🥒
     Maydanoz|🌿
-    Dereotu|🌿
-    Nane|🌿
-    Fesleğen|🌿
-    Roka|🥬
+    Dereotu|🌿|🐟
+    Nane|🌿|🍃
+    Fesleğen|🌿|🍅
+    Roka|🥬|🍃
     Marul|🥬
-    Ispanak|🥬
-    Lahana|🥬
-    Brüksel lahanası|🥬
-    Pırasa|🥬
-    Kereviz|🥬
+    Ispanak|🥬|💪
+    Lahana|🥬|🥗
+    Brüksel lahanası|🥬|🤏
+    Pırasa|🥬|🧅
+    Kereviz|🥬|🥕
     Soğan|🧅
-    Kırmızı soğan|🧅
-    Taze soğan|🧅
+    Kırmızı soğan|🧅|🔴
+    Taze soğan|🧅|🌱
     Sarımsak|🧄
     Patates|🥔
     Tatlı patates|🍠
     Biber|🫑
-    Kapya biber|🫑
-    Sivri biber|🌶️
+    Kapya biber|🫑|🔴
+    Sivri biber|🌶️|🟢
     Acı biber|🌶️
     Havuç|🥕
-    Kabak|🥒
+    Kabak|🥒|🌼
     Patlıcan|🍆
     Mantar|🍄
     Mısır|🌽
-    Bezelye|🌱
+    Bezelye|🌱|🟢
     Taze fasulye|🌱
-    Bamya|🌱
-    Enginar|🌿
-    Zencefil|🌿
+    Bamya|🌱|⭐
+    Enginar|🥬|🌸
+    Zencefil|🌿|🔥
     Limon|🍋
     Avokado|🥑
-    Turp|🥕
-    Pancar|🍠`),
+    Turp|🥕|🔴
+    Pancar|🍠|🟣`),
   G('Meyve', `
     Elma|🍎
     Yeşil elma|🍏
     Muz|🍌
     Portakal|🍊
-    Mandalina|🍊
-    Greyfurt|🍊
+    Mandalina|🍊|🤏
+    Greyfurt|🍊|🔴
     Üzüm|🍇
     Çilek|🍓
-    Ahududu|🍓
+    Ahududu|🍓|🔴
     Yaban mersini|🫐
     Armut|🍐
     Karpuz|🍉
@@ -104,152 +105,152 @@ const HAM = [
     Ananas|🍍
     Mango|🥭
     Şeftali|🍑
-    Kayısı|🍑
-    Erik|🍑
+    Kayısı|🍑|🟠
+    Erik|🍑|🟣
     Kiraz|🍒
-    Vişne|🍒
-    Nar|🍎
-    İncir|🍈
+    Vişne|🍒|🟤
+    Nar|🍎|💎
+    İncir|🍈|🟣
     Hurma|🌴
     Hindistan cevizi|🥥
-    Misket limonu|🍋`),
+    Misket limonu|🍋|🟢`),
   G('Süt ürünleri', `
     Süt|🥛
-    Laktozsuz süt|🥛
-    Yulaf sütü|🥛
-    Badem sütü|🥛
+    Laktozsuz süt|🥛|🚫
+    Yulaf sütü|🥛|🌾
+    Badem sütü|🥛|🌰
     Yoğurt|🥣
-    Süzme yoğurt|🥣
-    Meyveli yoğurt|🥣
-    Quark|🥣
-    Ayran|🥛
-    Kefir|🥛
+    Süzme yoğurt|🥣|🧀
+    Meyveli yoğurt|🥣|🍓
+    Quark|🥣|⚪
+    Ayran|🥛|🧂
+    Kefir|🥛|🫧
     Krema|🍶
-    Kaymak|🍶
+    Kaymak|🍶|🍯
     Puding|🍮
-    Sütlaç|🍮`),
+    Sütlaç|🍮|🍚`),
   G('Et, tavuk ve balık', `
     Kırmızı et|🥩
-    Kıyma|🥩
-    Kuşbaşı|🥩
-    Biftek|🥩
-    Antrikot|🥩
+    Kıyma|🥩|🌀
+    Kuşbaşı|🥩|🎲
+    Biftek|🥩|🔥
+    Antrikot|🥩|⭐
     Pirzola|🍖
-    Köfte|🍖
+    Köfte|🧆
     Döner eti|🥙
     Tavuk|🍗
-    Tavuk göğsü|🍗
-    Tavuk but|🍗
-    Tavuk kanat|🍗
+    Tavuk göğsü|🍗|💪
+    Tavuk but|🍗|🦵
+    Tavuk kanat|🍗|🕊️
     Bütün tavuk|🐔
     Hindi|🦃
     Balık|🐟
-    Somon|🐟
-    Levrek|🐟
-    Çipura|🐟
-    Ton balığı|🐟
+    Somon|🐟|🟠
+    Levrek|🐟|⚪
+    Çipura|🐟|🟡
+    Ton balığı|🐟|🔵
     Karides|🦐
     Kalamar|🦑
     Midye|🦪`),
   G('Kuru gıda ve bakliyat', `
     Makarna|🍝
-    Spagetti|🍝
-    Lazanya|🍝
+    Spagetti|🍝|🍅
+    Lazanya|🍝|🧀
     Erişte|🍜
-    Noodle|🍜
+    Noodle|🍜|🥢
     Pirinç|🍚
-    Basmati pirinç|🍚
-    Bulgur|🌾
-    Kuskus|🌾
-    Un|🌾
-    Mısır unu|🌽
-    İrmik|🌾
-    Nişasta|🌾
+    Basmati pirinç|🍚|✨
+    Bulgur|🌾|🍚
+    Kuskus|🌾|🔸
+    Un|🌾|🛍️
+    Mısır unu|🌽|🌾
+    İrmik|🌾|🍮
+    Nişasta|🌾|🥄
     Şeker|🍬
-    Esmer şeker|🍬
+    Esmer şeker|🍬|🟤
     Tuz|🧂
-    Karabiber|🧂
-    Pul biber|🌶️
-    Kimyon|🌿
-    Kekik|🌿
-    Baharat|🌶️
-    Mercimek|🫘
-    Kırmızı mercimek|🫘
-    Nohut|🫘
+    Karabiber|🧂|⚫
+    Pul biber|🌶️|🧂
+    Kimyon|🧂|🟤
+    Kekik|🌿|🍕
+    Baharat|🧂|🌶️
+    Mercimek|🫘|🟢
+    Kırmızı mercimek|🫘|🔴
+    Nohut|🫘|🟡
     Kuru fasulye|🫘
-    Barbunya|🫘
-    Salça|🥫
-    Domates salçası|🥫
-    Biber salçası|🥫
+    Barbunya|🫘|🟣
+    Salça|🥫|🔴
+    Domates salçası|🥫|🍅
+    Biber salçası|🥫|🌶️
     Konserve|🥫
-    Mısır konservesi|🌽
-    Ton balığı konservesi|🥫
-    Turşu|🥒
+    Mısır konservesi|🥫|🌽
+    Ton balığı konservesi|🥫|🐟
+    Turşu|🫙|🥒
     Kabartma tozu|🧁
-    Maya|🍞
-    Vanilin|🧁`),
+    Maya|🍞|🫧
+    Vanilin|🧁|🌼`),
   G('Yağ ve sos', `
-    Yağ|🫒
-    Zeytinyağı|🫒
-    Ayçiçek yağı|🌻
-    Sirke|🍶
-    Ketçap|🥫
-    Mayonez|🥫
-    Hardal|🥫
-    Soya sosu|🍶
-    Nar ekşisi|🍶
-    Pesto|🌿
-    Barbekü sosu|🍖
-    Acı sos|🌶️`),
+    Yağ|🫗
+    Zeytinyağı|🫗|🫒
+    Ayçiçek yağı|🫗|🌻
+    Sirke|🍶|🍎
+    Ketçap|🫙|🍅
+    Mayonez|🫙|🥚
+    Hardal|🫙|🟡
+    Soya sosu|🍶|🍣
+    Nar ekşisi|🍶|💎
+    Pesto|🫙|🌿
+    Barbekü sosu|🍶|🔥
+    Acı sos|🌶️|🍶`),
   G('Kahve ve çay', `
     Kahve|☕
-    Türk kahvesi|☕
-    Filtre kahve|☕
-    Kahve kapsülü|☕
-    Espresso|☕
+    Türk kahvesi|☕|🇹🇷
+    Filtre kahve|☕|💧
+    Kahve kapsülü|☕|💊
+    Espresso|☕|⚡
     Çay|🍵
-    Yeşil çay|🍵
-    Bitki çayı|🌿
-    Kakao|🍫
-    Sıcak çikolata|☕`),
+    Yeşil çay|🍵|🟢
+    Bitki çayı|🍵|🌿
+    Kakao|🍫|🥄
+    Sıcak çikolata|☕|🍫`),
   G('İçecek', `
-    İçecek|🥤
+    İçecek|🍹
     Su|💧
-    Maden suyu|🫧
+    Maden suyu|💧|🫧
     Soda|🫧
     Meyve suyu|🧃
-    Portakal suyu|🍊
+    Portakal suyu|🧃|🍊
     Kola|🥤
-    Gazoz|🥤
+    Gazoz|🥤|🫧
     Ice tea|🧋
     Enerji içeceği|⚡
-    Limonata|🍋
-    Şalgam|🥤
+    Limonata|🥤|🍋
+    Şalgam|🥤|🟣
     Bira|🍺
     Şarap|🍷
-    Rakı|🥃
+    Rakı|🥃|🦁
     Viski|🥃`),
   G('Atıştırmalık ve tatlı', `
-    Kuru yemiş|🥜
+    Kuru yemiş|🥜|🌰
     Fındık|🌰
-    Ceviz|🌰
-    Badem|🌰
+    Ceviz|🌰|🧠
+    Badem|🌰|🔸
     Fıstık|🥜
-    Kaju|🥜
+    Kaju|🥜|🌙
     Ay çekirdeği|🌻
-    Kuru üzüm|🍇
-    Kuru kayısı|🍑
-    Cips|🥔
+    Kuru üzüm|🍇|☀️
+    Kuru kayısı|🍑|☀️
+    Cips|🥔|🛍️
     Kraker|🍘
     Bisküvi|🍪
-    Kurabiye|🍪
-    Gofret|🍫
+    Kurabiye|🍪|⭐
+    Gofret|🧇
     Çikolata|🍫
-    Bitter çikolata|🍫
-    Şekerleme|🍬
-    Sakız|🍬
-    Lokum|🍬
-    Helva|🍯
+    Bitter çikolata|🍫|⚫
+    Şekerleme|🍭
+    Sakız|🍬|🫧
+    Lokum|🍬|🌹
+    Helva|🍯|🥜
     Kek|🍰
     Pasta|🎂
     Dondurma|🍦
@@ -258,93 +259,93 @@ const HAM = [
     Pommes|🍟
     Buz|🧊
     Pizza|🍕
-    Dondurulmuş sebze|🥦
+    Dondurulmuş sebze|🥦|❄️
     Mantı|🥟
-    Börek|🥟
-    Lahmacun|🫓
+    Börek|🥧
+    Lahmacun|🫓|🥩
     Hamburger köftesi|🍔
-    Nugget|🍗
+    Nugget|🍗|❄️
     Hazır çorba|🍲
     Sandviç|🥪
     Sushi|🍣`),
   G('Ev ve temizlik', `
     Tuvalet kâğıdı|🧻
-    Havlu peçete|🧻
-    Kâğıt mendil|🧻
-    Peçete|🧻
+    Havlu peçete|🧻|🍽️
+    Kâğıt mendil|🤧
+    Peçete|🧻|🍴
     Çöp poşeti|🗑️
     Buzdolabı poşeti|🛍️
-    Alüminyum folyo|🧻
-    Streç film|🧻
-    Pişirme kâğıdı|🧻
-    Bulaşık tableti|🫧
-    Bulaşık deterjanı|🧴
-    Bulaşık makinesi tuzu|🧂
+    Alüminyum folyo|🥈
+    Streç film|🎞️
+    Pişirme kâğıdı|🧻|🔥
+    Bulaşık tableti|🍽️|💊
+    Bulaşık deterjanı|🍽️|🧴
+    Bulaşık makinesi tuzu|🧂|🍽️
     Parlatıcı|✨
-    Makine temizleyici|🫧
+    Makine temizleyici|🫧|⚙️
     Çamaşır deterjanı|🧺
-    Sıvı deterjan|🧺
-    Yumuşatıcı|🧴
-    Leke çıkarıcı|🧴
-    Çamaşır suyu|🧴
-    Yüzey temizleyici|🧽
+    Sıvı deterjan|🧺|💧
+    Yumuşatıcı|🧴|🧸
+    Leke çıkarıcı|🧴|🎯
+    Çamaşır suyu|🧴|⚠️
+    Yüzey temizleyici|🧽|✨
     Cam temizleyici|🪟
     Banyo temizleyici|🛁
     Tuvalet temizleyici|🚽
-    Kireç çözücü|🧴
+    Kireç çözücü|🧴|🪨
     Sünger|🧽
-    Temizlik bezi|🧽
+    Temizlik bezi|🧽|🟦
     Eldiven|🧤
     Süpürge torbası|🧹
     Pil|🔋
     Ampul|💡
     Mum|🕯️
     Kibrit|🔥
-    Oda kokusu|🌸`),
+    Oda kokusu|🌸|💨`),
   G('Kişisel bakım', `
-    Diş macunu|🪥
+    Diş macunu|🪥|🦷
     Diş fırçası|🪥
-    Diş ipi|🪥
-    Ağız gargarası|🧴
-    Şampuan|🧴
-    Saç kremi|🧴
-    Saç jölesi|🧴
+    Diş ipi|🦷|🧵
+    Ağız gargarası|🧴|👄
+    Şampuan|🧴|💇
+    Saç kremi|🧴|💆
+    Saç jölesi|🧴|💈
     Sabun|🧼
-    Sıvı sabun|🧼
-    Duş jeli|🧴
-    Deodorant|🧴
-    Parfüm|🌸
+    Sıvı sabun|🧼|💧
+    Duş jeli|🚿
+    Deodorant|🧴|💨
+    Parfüm|🌸|✨
     Tıraş bıçağı|🪒
-    Tıraş köpüğü|🪒
+    Tıraş köpüğü|🪒|🫧
     Krem|🧴
-    El kremi|🧴
-    Nemlendirici|🧴
+    El kremi|🧴|✋
+    Nemlendirici|🧴|💧
     Güneş kremi|☀️
     Pamuk|☁️
-    Kulak çubuğu|🧻
-    Hijyenik ped|🧻
+    Kulak çubuğu|👂
+    Hijyenik ped|🩸
     Yara bandı|🩹
-    Ağrı kesici|💊
-    Vitamin|💊
+    Ağrı kesici|💊|🤕
+    Vitamin|💊|🍊
     İlaç|💊
     Tırnak makası|✂️`),
   G('Çocuk', `
     Bebek bezi|👶
-    Islak mendil|🧻
-    Bebek maması|🍼
-    Bebek sütü|🍼
+    Islak mendil|🧻|💧
+    Bebek maması|🍼|🥣
+    Bebek sütü|🍼|🥛
     Biberon|🍼
-    Emzik|🍼
-    Meyve püresi|🍎
-    Bebek şampuanı|🧴
-    Pişik kremi|🧴
-    Çocuk bisküvisi|🍪
+    Emzik|👶|⭕
+    Meyve püresi|🍼|🍎
+    Bebek şampuanı|🧴|👶
+    Pişik kremi|🧴|🍑
+    Çocuk bisküvisi|🍪|👶
     Oyuncak|🧸
     Boya kalemi|🖍️`),
   G('Evcil hayvan', `
     Kedi maması|🐱
     Köpek maması|🐶
-    Kedi kumu|🐱
+    Kedi kumu|🐱|🪣
     Ödül maması|🦴`),
   G('Diğer', `
     Çiçek|💐
@@ -366,6 +367,9 @@ export const sade = (s) => String(s ?? '').toLocaleLowerCase('tr-TR').trim()
   .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u');
 
 const EMOJI = new Map(KATALOG_URUNLER.map(([ad, e]) => [sade(ad), e]));
+const ROZET = new Map(KATALOG_URUNLER.filter(([, , r]) => r).map(([ad, , r]) => [sade(ad), r]));
+/** Katalogdaki tam ad için köşe rozeti (yoksa null). */
+export const katalogRozet = (ad) => ROZET.get(sade(ad)) ?? null;
 const TEK_KELIME = KATALOG_URUNLER.filter(([ad]) => !ad.includes(' ')).map(([ad, e]) => [sade(ad), e]);
 
 /** Ürün adından renkli simge: tam ad → katalog; değilse addaki bir kelime (örn. "Tam yağlı süt" → süt); yoksa null. */

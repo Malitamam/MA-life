@@ -181,3 +181,8 @@ textarea.girdi { resize: vertical; min-height: 120px; }
 .magaza-satir.yok .bm { opacity: .7; }
 .bulamadim { flex: none; font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 12px; background: var(--zemin); color: var(--soluk); }
 .bulamadim.secili { background: color-mix(in srgb, var(--sari) 30%, var(--zemin)); color: var(--yazi); }
+/* Köşe rozeti: aynı simgeli ürünleri ayırır (örn. 🫒 Zeytin / 🫒⚫ Siyah zeytin). */
+.kkutu-emoji, .liste-emoji, .oneri-e { position: relative; display: inline-flex; }
+.alt-rozet { position: absolute; right: -6px; bottom: -3px; font-style: normal; font-size: 0.5em; line-height: 1; padding: 1px; border-radius: 50%; background: var(--yuzey); box-shadow: 0 0 0 1px var(--cizgi); }
+.oneri .alt-rozet { background: var(--zemin); }
+.oneri-e { margin-right: 4px; } .liste-emoji { margin-right: 3px; }

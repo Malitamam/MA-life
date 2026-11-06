@@ -131,6 +131,7 @@ const URUN_EMOJI = { ekmek: '🍞', brokoli: '🥦', domates: '🍅', salatalik:
   yag: '🫒', yemis: '🥜', musli: '🌾', pommes: '🍟', buz: '🧊', paket: '🛒' };
 
 export { URUN_KATALOG } from './katalog.js';
-import { katalogEmoji } from './katalog.js';
+import { katalogEmoji, katalogRozet } from './katalog.js';
+export const urunRozet = (ad) => katalogRozet(ad);
 /** Renkli simge: katalog (tam ad, sonra addaki kelime), sonra eski anahtar kelime tablosu; bilinmeyen → alışveriş arabası. */
 export const urunEmoji = (ad) => katalogEmoji(ad) ?? URUN_EMOJI[urunIkonu(ad)] ?? '🛒';
