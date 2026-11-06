@@ -15,7 +15,7 @@ import { urunIkonu, urunEmoji, URUN_KATALOG } from '../ikonlar.js';
 
 export const KART_TUTARLARI = [10, 20, 30, 40, 50];
 
-const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve' };
+const KISA = { 'Bulaşık makinesi': 'Bulaşık', 'Çamaşır makinesi': 'Çamaşır', 'Kurutma makinesi': 'Kurutma', 'Çamaşır asma': 'Asma', 'Bulaşık boşaltma': 'Boşaltma', 'Kahve paketi açtım': 'Kahve', 'Pfand iade': 'Pfand' };
 const kisaAd = (ad) => KISA[ad] ?? ad;
 
 /**
