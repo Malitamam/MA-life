@@ -1,0 +1,23 @@
+{
+  "name": "MALI",
+  "short_name": "MALI",
+  "description": "Ev işleri, sayaçlar, ajanda, alışveriş, stok, notlar ve günlük.",
+  "lang": "tr",
+  "start_url": "./#/pano",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#22232A",
+  "theme_color": "#22232A",
+  "icons": [
+    { "src": "ikon/192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "ikon/512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "ikon/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Alışveriş", "url": "./#/alim", "icons": [{ "src": "ikon/192.png", "sizes": "192x192" }] },
+    { "name": "Ajanda", "url": "./#/ajanda", "icons": [{ "src": "ikon/192.png", "sizes": "192x192" }] },
+    { "name": "Notlar", "url": "./#/notlar", "icons": [{ "src": "ikon/192.png", "sizes": "192x192" }] },
+    { "name": "Günlük", "url": "./#/gunluk", "icons": [{ "src": "ikon/192.png", "sizes": "192x192" }] }
+  ]
+}
