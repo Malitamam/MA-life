@@ -292,7 +292,7 @@ export const SayacMantik = {
     { anahtar: 'dyson', ad: 'Dyson', ikon: 'supurge', renk: 3, secenekler: [] },
     { anahtar: 'roborock', ad: 'Roborock', ikon: 'robot', renk: 2, secenekler: [] },
   ],
-  PANO: ['bulasik_calis', 'camasir', 'kurutucu', 'asma', 'cop'],
+  PANO: ['bulasik_calis', 'camasir', 'kurutucu', 'asma', 'cop', 'dyson', 'roborock'],
   CAMASIR_SURE: ['Kısa', 'Uzun'],
   CAMASIR_TUR: ['Beyaz', 'Siyah', 'Renkli', 'Nehir', 'Havlu'],
   hazir: (anahtar) => SayacMantik.HAZIR.find((h) => h.anahtar === anahtar) ?? null,

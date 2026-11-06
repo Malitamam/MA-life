@@ -52,13 +52,13 @@ export function PanoEkrani() {
     if (gr.yapildi || goruldu.has(gr.a.id)) continue;
     goruldu.add(gr.a.id); ajandaIs.push([g, gr]);
   }
-  // Hızlı kısa yollar: sabit beşli (bulaşık, çamaşır, kurutma, asma, çöp), sonra son 30 günde en çok kullanılan sayaçlar; en fazla 8.
+  // Hızlı kısa yollar: sabit yedili (bulaşık, çamaşır, kurutma, asma, çöp, Dyson, Roborock), sonra son 30 günde en çok kullanılan sayaçlar; en fazla 12.
   const sabit = SayacMantik.PANO.map((a) => isler.find((d) => d.anahtar === a)).filter(Boolean);
   const kullanim = new Map();
   for (const k of depo.aralik(bugun - 30, bugun)) if (k.kaynak === 'SAYAC') kullanim.set(k.refId, (kullanim.get(k.refId) ?? 0) + 1);
   const digerleri = isler.filter((d) => d.tur === 'SAYAC' && !sabit.includes(d) && (d.yildizli || kullanim.get(d.id)))
     .sort((a, b) => (kullanim.get(b.id) ?? 0) - (kullanim.get(a.id) ?? 0) || a.id - b.id);
-  const sayaclar = [...sabit, ...digerleri].slice(0, 8);
+  const sayaclar = [...sabit, ...digerleri].slice(0, 12);
   const evYakin = PanoMantik.evIsleriYakin(isler, bugun);
   const isaretMap = new Map();
   for (const x of M.db.hepsi('isaretler')) { if (!isaretMap.has(x.zincirId)) isaretMap.set(x.zincirId, new Map()); isaretMap.get(x.zincirId).set(x.gun, x.adet); }
