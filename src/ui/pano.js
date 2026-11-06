@@ -144,6 +144,8 @@ export function PanoEkrani() {
       </div>
       <${ModSecici} mod=${mod} kucuk onMod=${(s) => depo.modYaz(bugun, s)} />
       <span style="width:4px"></span>
+      <button class="uc-d" aria-label="Evime gir (3D)" onClick=${() => git('ev')}>3D</button>
+      <span style="width:6px"></span>
       <div style="position:relative">
         <${YuvarlakButon} ikon="notlar" aciklama="İşlenmemiş notlar" onClick=${() => git('notlar')} />
         ${islenmemis > 0 && html`<${MiniRozet} metin=${String(islenmemis)} stil=${{ top: '-4px', right: '-4px' }} />`}

@@ -17,6 +17,7 @@ import { AramaEkrani, OzetEkrani, AyarlarEkrani } from './ui/ekstra.js';
 import { haftalikYedekGerekirse, sabahOzetiGerekirse } from './sistem.js';
 import { Is } from './ui/islem.js';
 import { Dialog } from './ui/ortak.js';
+import { EvEkrani } from './ui/ev.js';
 
 // Sekme: rota, ad, renk, ikon, sütun, üstte mi
 const SEKME = [
@@ -100,6 +101,7 @@ function Ekran({ rota }) {
     case 'ara': return html`<${AramaEkrani} />`;
     case 'ozet': return html`<${OzetEkrani} />`;
     case 'ayarlar': return html`<${AyarlarEkrani} />`;
+    case 'ev': return html`<${EvEkrani} />`;
     default: return html`<${PanoEkrani} />`;
   }
 }
@@ -173,11 +175,11 @@ function Uygulama() {
   useEffect(() => { document.querySelector('.ust-alan > .icerik')?.scrollTo?.(0, 0); }, [rota]);
 
   return html`<${KurulumSeridi} />
-    <div class="ust-alan" style="padding-top:12px">
+    <div class="ust-alan" style=${rota === 'ev' ? 'padding-top:0' : 'padding-top:12px'}>
       <${Ekran} key=${rota.split('/')[0]} rota=${rota} />
       <${Snack} />
     </div>
-    <${PetekMenu} secili=${seciliSekme(rota)} rozetler=${rozetler} />
+    ${rota !== 'ev' && html`<${PetekMenu} secili=${seciliSekme(rota)} rozetler=${rozetler} />`}
     <${Pencereler} />
     <${Toast} />`;
 }
@@ -185,8 +187,8 @@ function Uygulama() {
 async function basla() {
   const kok = document.getElementById('uygulama');
   try {
-    const db = new Db();
-    await db.ac(indexedDB);
+    let db = new Db();
+    try { await db.ac(indexedDB); } catch (e) { console.warn('IndexedDB açılamadı, veriler sadece bu oturumda tutulacak', e); db = new Db(); await db.ac(null); }
     M.db = db;
     M.depo = new Depo(db);
     temaUygula();

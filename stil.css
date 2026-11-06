@@ -136,3 +136,32 @@ textarea.girdi { resize: vertical; min-height: 120px; }
 .kur-serit { display: flex; align-items: center; gap: 10px; margin: 8px 12px 0; padding: 8px 8px 8px 10px; background: var(--yuzey); border-radius: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); animation: belir .2s; }
 .kur-serit img { border-radius: 8px; }
 .kur-btn { background: var(--mercan); color: var(--murekkep); font-weight: 700; padding: 9px 16px; border-radius: 18px; }
+
+/* Ev modu (3D gezinti + kroki) */
+.uc-d { height: 40px; min-width: 44px; padding: 0 10px; border-radius: 20px; background: linear-gradient(160deg, var(--mercan), #D9735A); color: var(--murekkep); font-weight: 800; font-size: 14px; box-shadow: var(--golge-k); letter-spacing: .5px; }
+.ev-ekran { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.ev-ust { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; }
+.ev-sahne { position: relative; flex: 1; min-height: 0; }
+.ev-tuval-kap { position: absolute; inset: 0; }
+.ev-tuval { width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
+.ev-odalar { position: absolute; left: 0; right: 0; top: 6px; display: flex; gap: 6px; overflow-x: auto; padding: 0 12px; scrollbar-width: none; }
+.ev-odalar::-webkit-scrollbar { display: none; }
+.ev-oda-cip { flex: none; padding: 6px 11px; border-radius: 14px; background: rgba(46, 48, 56, .78); color: #F3F1EE; font-size: 11px; font-weight: 700; }
+.ev-oda-cip.secili { background: var(--adacayi); color: var(--murekkep); }
+.ev-zum { position: absolute; right: 12px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.ev-sayfa { position: absolute; left: 8px; right: 8px; bottom: 8px; max-height: 52%; display: flex; flex-direction: column; background: var(--yuzey); border-radius: 24px; padding: 14px 14px 12px; box-shadow: 0 -6px 30px rgba(0, 0, 0, .35); z-index: 20; animation: belir .15s; max-width: 520px; margin: 0 auto; }
+.ev-sayfa-ic { overflow-y: auto; min-height: 0; }
+.ev-satir { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 10px; border-radius: 16px; background: var(--zemin); }
+.ev-ikon { width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+.ev-nokta { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ev-yap { flex: none; padding: 8px 12px; border-radius: 14px; background: var(--adacayi); color: var(--murekkep); font-weight: 800; font-size: 12px; }
+.ev-cip { padding: 9px 12px; border-radius: 14px; background: var(--zemin); font-weight: 700; }
+.ev-pfand { display: flex; gap: 8px; }
+.ev-pfand > span { flex: 1; background: var(--zemin); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+.ev-pfand b { font-size: 22px; } .ev-pfand i { font-style: normal; font-size: 11px; color: var(--soluk); }
+.ev-hedefler { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ev-hedef { height: 84px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.ev-kroki-kap { position: absolute; inset: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; }
+.ev-kroki { width: 100%; max-width: 560px; height: auto; flex: none; padding: 0 10px; }
+.ev-kroki-yazi { font-size: 0.42px; font-weight: 800; fill: #2A2420; pointer-events: none; paint-order: stroke; stroke: rgba(255, 255, 255, .7); stroke-width: 0.08px; }
+.ev-kroki-unlem { font-size: 0.5px; font-weight: 800; fill: #fff; }
